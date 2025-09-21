@@ -18,7 +18,7 @@ def text_encryption(text: str, polybian_square) -> str:
     return new_text
 
 if __name__ == "__main__":
-    text = "Hello world!"
+    text = "asdf world!"
     polybian_square = [['q', 'w', 'e', 'r', 't'],
                       ['a', 's', 'd', 'f', 'm'],
                       ['z', 'x', 'c', 'v', 'b'],
