@@ -1,0 +1,51 @@
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.exe
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.deps.json
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.runtimeconfig.json
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.dll
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.pdb
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.csproj.GenerateResource.cache
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.AssemblyInfoInputs.cache
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.AssemblyInfo.cs
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.csproj.CoreCompileInputs.cache
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.dll
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\obj\Debug\net8.0-windows\refint\WinFormsApp1.dll
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.pdb
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.genruntimeconfig.cache
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\obj\Debug\net8.0-windows\ref\WinFormsApp1.dll
+C:\Users\user\source\repos\WinFormsApp1\WinFormsApp1\obj\Debug\net8.0-windows\RSAEncryption.Form1.resources
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.exe
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.deps.json
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.runtimeconfig.json
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.dll
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.pdb
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\obj\Debug\net8.0-windows\RSAEncryption.Form1.resources
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.csproj.GenerateResource.cache
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.AssemblyInfoInputs.cache
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.AssemblyInfo.cs
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.csproj.CoreCompileInputs.cache
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.dll
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\obj\Debug\net8.0-windows\refint\WinFormsApp1.dll
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.pdb
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.genruntimeconfig.cache
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\obj\Debug\net8.0-windows\ref\WinFormsApp1.dll
+C:\Users\vasja\Desktop\drive-download-20251003T053736Z-1-001\WinFormsApp1\obj\Debug\net8.0-windows\RSAEncryption.CalculationDetailsForm.resources
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.exe
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.deps.json
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.runtimeconfig.json
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.dll
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\bin\Debug\net8.0-windows\WinFormsApp1.pdb
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\RSAEncryption.CalculationDetailsForm.resources
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\RSAEncryption.Form1.resources
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.csproj.GenerateResource.cache
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.GeneratedMSBuildEditorConfig.editorconfig
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.AssemblyInfoInputs.cache
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.AssemblyInfo.cs
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.csproj.CoreCompileInputs.cache
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.sourcelink.json
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.dll
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\refint\WinFormsApp1.dll
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.pdb
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\WinFormsApp1.genruntimeconfig.cache
+C:\Users\vasja\Desktop\HomeworksCourse3\Методы ИИ в защите программных систем ЛР\ЛР-2\WinFormsApp1\obj\Debug\net8.0-windows\ref\WinFormsApp1.dll
