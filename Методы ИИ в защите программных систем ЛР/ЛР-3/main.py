@@ -8,7 +8,7 @@ from cryptography.fernet import Fernet, InvalidToken
 
 # --- Функции для генерации простых чисел ---
 
-def is_prime(n, k=5):
+def is_prime(n, k=10):
     """
     Тест Миллера-Рабина на простоту числа.
     n: число для проверки
@@ -53,7 +53,7 @@ def generate_prime(bits):
 class CryptoApp:
     def __init__(self, master):
         self.master = master
-        self.master.title("Шифрование методом Диффи-Хеллмана (Демо)")
+        self.master.title("Шифрование методом Диффи-Хеллмана")
         self.master.geometry("800x700")
         self.filepath = None
 
@@ -168,12 +168,12 @@ S = (g^y mod p)^x mod p = (g^x mod p)^y mod p = g^(xy) mod p
             return
             
         # 1. Генерация публичных параметров
-        p = generate_prime(16) # Модуль (для демо 16 бит достаточно)
+        p = generate_prime(256) # Модуль 
         g = 5 # Основание (часто используемое простое число)
 
         # 2. Генерация секретных ключей x и y
-        x = generate_prime(12) # Секретный ключ "Алисы"
-        y = generate_prime(12) # Секретный ключ "Боба"
+        x = generate_prime(256) # Секретный ключ "Алисы"
+        y = generate_prime(256) # Секретный ключ "Боба"
         
         # 3. Вычисление открытых ключей
         A = pow(g, x, p)
