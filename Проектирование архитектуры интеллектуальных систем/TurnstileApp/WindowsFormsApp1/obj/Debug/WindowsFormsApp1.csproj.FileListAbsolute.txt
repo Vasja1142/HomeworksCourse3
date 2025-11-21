@@ -8,3 +8,4 @@ C:\Users\vasja\Desktop\HomeworksCourse3\Проектирование архит�
 C:\Users\vasja\Desktop\HomeworksCourse3\Проектирование архитектуры интеллектуальных систем\TurnstileApp\WindowsFormsApp1\bin\Debug\WindowsFormsApp1.pdb
 C:\Users\vasja\Desktop\HomeworksCourse3\Проектирование архитектуры интеллектуальных систем\TurnstileApp\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.exe
 C:\Users\vasja\Desktop\HomeworksCourse3\Проектирование архитектуры интеллектуальных систем\TurnstileApp\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.pdb
+C:\Users\vasja\Desktop\HomeworksCourse3\Проектирование архитектуры интеллектуальных систем\TurnstileApp\WindowsFormsApp1\obj\Debug\WindowsFormsApp1.exe.config
