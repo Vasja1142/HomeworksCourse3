@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Проверка CRC16</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;500&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: #fff;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            border: 1px solid rgba(255, 255, 255, 0.18);
+            text-align: center;
+            max-width: 500px;
+            width: 90%;
+        }
+
+        h1 {
+            font-weight: 500;
+            margin-bottom: 30px;
+        }
+
+        .input-group {
+            margin-bottom: 25px;
+        }
+
+        #binaryInput {
+            width: calc(100% - 20px);
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+            transition: background-color 0.3s ease;
+        }
+
+        #binaryInput::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        #binaryInput:focus {
+            background-color: rgba(255, 255, 255, 0.3);
+        }
+
+        button {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 8px;
+            background-color: #8e44ad;
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background-color 0.3s ease, transform 0.2s ease;
+            font-weight: 500;
+        }
+
+        button:hover {
+            background-color: #9b59b6;
+            transform: translateY(-2px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 30px;
+            font-size: 18px;
+            font-weight: 500;
+            min-height: 30px;
+        }
+
+        #crcResult {
+            font-family: 'Courier New', Courier, monospace;
+            background-color: rgba(0, 0, 0, 0.2);
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Проверка CRC16</h1>
+        <div class="input-group">
+            <input type="text" id="binaryInput" placeholder="Введите двоичную последовательность">
+        </div>
+        <button onclick="calculateCRC()">Вычислить CRC16</button>
+        <div class="result">
+            <p>Контрольная сумма: <span id="crcResult"></span></p>
+        </div>
+    </div>
+
+    <script>
+        // Функция вычисления CRC16 по алгоритму Modbus (полином 0xA001)
+        function crc16(buffer) {
+            let crc = 0xFFFF; // Начальное значение регистра CRC — стандартное для Modbus
+            
+            for (let i = 0; i < buffer.length; i++) {
+                crc ^= buffer[i]; // Ввод текущего байта в расчёт CRC
+                
+                for (let j = 0; j < 8; j++) {
+                    // Проверка младшего бита — решает, нужно ли применять полином
+                    if ((crc & 0x0001) !== 0) {
+                        // Если есть единичный бит — сдвигаем и "вмешиваем" полином для повышения чувствительности CRC
+                        crc = (crc >> 1) ^ 0xA001;
+                    } else {
+                        // Иначе просто сдвигаем вправо (движение регистра)
+                        crc = crc >> 1;
+                    }
+                }
+            }
+
+            return crc; // Возвращаем итоговую 16-битную контрольную сумму
+        }
+
+        function calculateCRC() {
+            const binaryInput = document.getElementById('binaryInput').value;
+            const resultElement = document.getElementById('crcResult');
+
+            if (!/^[01]+$/.test(binaryInput)) {
+                resultElement.textContent = 'Ошибка: неверный формат ввода';
+                return;
+            }
+
+            // Преобразование двоичной строки в массив байтов
+            const bytes = [];
+            for (let i = 0; i < binaryInput.length; i += 8) {
+                const byteString = binaryInput.substring(i, i + 8);
+                bytes.push(parseInt(byteString, 2));
+            }
+
+            const crcValue = crc16(new Uint8Array(bytes));
+            resultElement.textContent = '0x' + crcValue.toString(16).toUpperCase().padStart(4, '0');
+        }
+    </script>
+
+</body>
+</html>

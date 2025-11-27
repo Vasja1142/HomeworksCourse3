@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Шифрование файла методом гаммирования</title>
+    <style>
+        /* --- Стили (CSS) --- */
+        :root {
+            --bg-color: #1a1a2e;
+            --primary-color: #16213e;
+            --secondary-color: #0f3460;
+            --accent-color: #e94560;
+            --text-color: #dcdcdc;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: var(--font-family);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 700px;
+            background-color: var(--primary-color);
+            padding: 30px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border: 1px solid var(--secondary-color);
+        }
+
+        h1 {
+            color: var(--accent-color);
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+        }
+
+        .section {
+            background-color: var(--secondary-color);
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 0;
+            border-bottom: 2px solid var(--accent-color);
+            padding-bottom: 10px;
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+            margin-bottom: 15px;
+        }
+
+        .btn {
+            background-color: var(--accent-color);
+            color: var(--text-color);
+            padding: 12px 20px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 1em;
+            transition: all 0.3s ease;
+            width: 100%;
+            text-align: center;
+        }
+        
+        .btn:hover {
+            opacity: 0.9;
+            box-shadow: 0 5px 15px rgba(233, 69, 96, 0.4);
+        }
+        
+        .btn:disabled {
+            background-color: #555;
+            cursor: not-allowed;
+        }
+
+        input[type="file"] {
+            font-size: 100px;
+            position: absolute;
+            left: 0;
+            top: 0;
+            opacity: 0;
+            cursor: pointer;
+        }
+        
+        .file-label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+
+        .status {
+            margin-top: 15px;
+            padding: 10px;
+            background-color: rgba(255, 255, 255, 0.05);
+            border-radius: 5px;
+            text-align: center;
+            min-height: 20px;
+            word-wrap: break-word;
+        }
+
+        .download-links {
+            margin-top: 20px;
+            text-align: center;
+        }
+
+        .download-links a {
+            color: var(--accent-color);
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+         .download-links a:hover {
+             text-decoration: underline;
+         }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>Гаммирование (x mod 2^N)</h1>
+
+        <!-- Секция Шифрования -->
+        <div class="section">
+            <h2>Шифрование</h2>
+            <label for="encryptFileInput" class="file-label">1. Выберите файл для шифрования:</label>
+            <div class="file-input-wrapper">
+                 <button type="button" class="btn">Выбрать файл</button>
+                 <input type="file" id="encryptFileInput">
+            </div>
+            <div id="encryptStatus" class="status">Файл не выбран...</div>
+            <button id="encryptButton" class="btn" disabled>Зашифровать</button>
+            <div id="encryptDownloadLinks" class="download-links"></div>
+        </div>
+
+        <!-- Секция Расшифровки -->
+        <div class="section">
+            <h2>Расшифровка</h2>
+            <label for="decryptFileInput" class="file-label">1. Выберите зашифрованный файл:</label>
+             <div class="file-input-wrapper">
+                 <button type="button" class="btn">Выбрать файл (.enc)</button>
+                 <input type="file" id="decryptFileInput">
+            </div>
+            <label for="keyFileInput" class="file-label">2. Выберите файл ключа (гамму):</label>
+             <div class="file-input-wrapper">
+                 <button type="button" class="btn">Выбрать ключ (.key)</button>
+                 <input type="file" id="keyFileInput">
+            </div>
+            <div id="decryptStatus" class="status">Файлы не выбраны...</div>
+            <button id="decryptButton" class="btn" disabled>Расшифровать</button>
+            <div id="decryptDownloadLinks" class="download-links"></div>
+        </div>
+    </div>
+
+<script>
+// --- Логика (JavaScript) ---
+
+document.addEventListener('DOMContentLoaded', () => {
+    // --- Глобальные переменные для хранения данных файлов ---
+    let fileToEncrypt = null;
+    let fileToDecrypt = null;
+    let keyFile = null;
+
+    // --- Элементы DOM ---
+    const encryptFileInput = document.getElementById('encryptFileInput');
+    const encryptButton = document.getElementById('encryptButton');
+    const encryptStatus = document.getElementById('encryptStatus');
+    const encryptDownloadLinks = document.getElementById('encryptDownloadLinks');
+
+    const decryptFileInput = document.getElementById('decryptFileInput');
+    const keyFileInput = document.getElementById('keyFileInput');
+    const decryptButton = document.getElementById('decryptButton');
+    const decryptStatus = document.getElementById('decryptStatus');
+    const decryptDownloadLinks = document.getElementById('decryptDownloadLinks');
+    
+    // --- Обработчики событий для выбора файлов ---
+    encryptFileInput.addEventListener('change', (e) => {
+        fileToEncrypt = e.target.files[0];
+        if (fileToEncrypt) {
+            encryptStatus.textContent = `Выбран файл: ${fileToEncrypt.name}`;
+            encryptButton.disabled = false;
+        }
+    });
+
+    decryptFileInput.addEventListener('change', (e) => {
+        fileToDecrypt = e.target.files[0];
+        updateDecryptStatus();
+    });
+
+    keyFileInput.addEventListener('change', (e) => {
+        keyFile = e.target.files[0];
+        updateDecryptStatus();
+    });
+    
+    function updateDecryptStatus() {
+        if (fileToDecrypt && keyFile) {
+            decryptStatus.textContent = `Шифр: ${fileToDecrypt.name}, Ключ: ${keyFile.name}`;
+            decryptButton.disabled = false;
+        } else if (fileToDecrypt) {
+            decryptStatus.textContent = `Выбран шифр-файл. Теперь выберите ключ.`;
+        } else if (keyFile) {
+             decryptStatus.textContent = `Выбран ключ. Теперь выберите шифр-файл.`;
+        }
+    }
+    
+    // --- Основные функции ---
+
+    /**
+     * Читает файл и возвращает его содержимое в виде ArrayBuffer.
+     * @param {File} file - Файл для чтения.
+     * @returns {Promise<ArrayBuffer>} - Промис, который разрешается с ArrayBuffer.
+     */
+    function readFileAsArrayBuffer(file) {
+        return new Promise((resolve, reject) => {
+            const reader = new FileReader();
+            reader.onload = () => resolve(reader.result);
+            reader.onerror = reject;
+            reader.readAsArrayBuffer(file);
+        });
+    }
+
+    /**
+     * Создает ссылку для скачивания файла.
+     * @param {Blob} blob - Данные для скачивания.
+     * @param {string} filename - Имя файла.
+     * @returns {HTMLAnchorElement} - Элемент ссылки.
+     */
+    function createDownloadLink(blob, filename) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = filename;
+        a.textContent = `Скачать ${filename}`;
+        return a;
+    }
+
+    /**
+     * Расширенный алгоритм Евклида для нахождения НОД и коэффициентов Безу.
+     * Необходим для нахождения модульного обратного.
+     * @param {BigInt} a
+     * @param {BigInt} b
+     * @returns {[BigInt, BigInt, BigInt]} - [НОД, x, y] такие, что ax + by = НОД.
+     */
+    function extendedEuclideanAlgorithm(a, b) {
+        if (a === 0n) {
+            return [b, 0n, 1n];
+        }
+        const [gcd, x1, y1] = extendedEuclideanAlgorithm(b % a, a);
+        const x = y1 - (b / a) * x1;
+        const y = x1;
+        return [gcd, x, y];
+    }
+
+    /**
+     * Находит модульное мультипликативное обратное для числа 'a' по модулю 'm'.
+     * То есть, находит такое 'x', что (a * x) % m === 1.
+     * @param {BigInt} a - Число, для которого ищется обратное.
+     * @param {BigInt} m - Модуль.
+     * @returns {BigInt | null} - Обратное число или null, если его не существует.
+     */
+    function modInverse(a, m) {
+        const [gcd, x] = extendedEuclideanAlgorithm(a, m);
+        if (gcd !== 1n) {
+            // Обратное не существует, если 'a' и 'm' не взаимно простые.
+            return null;
+        }
+        // Убеждаемся, что результат положительный.
+        return (x % m + m) % m;
+    }
+
+
+    // --- Логика шифрования ---
+    encryptButton.addEventListener('click', async () => {
+        if (!fileToEncrypt) return;
+
+        try {
+            encryptStatus.textContent = 'Чтение файла...';
+            const originalBuffer = await readFileAsArrayBuffer(fileToEncrypt);
+            const originalSize = originalBuffer.byteLength;
+            
+            encryptStatus.textContent = 'Подготовка данных...';
+
+            // 1. ДОПОЛНЕНИЕ ДАННЫХ (PADDING)
+            // Длина данных должна быть кратна 4 байтам (32 бита).
+            // Добавляем байты со значением 0, если это необходимо.
+            const paddingSize = (4 - (originalSize % 4)) % 4;
+            // Новый буфер будет содержать исходные данные, паддинг и 4 байта для хранения исходного размера.
+            const paddedBuffer = new ArrayBuffer(originalSize + paddingSize + 4);
+            const paddedView = new Uint8Array(paddedBuffer);
+            paddedView.set(new Uint8Array(originalBuffer));
+            // В конец записываем 32-битное число - исходный размер файла. Это нужно для расшифровки.
+            new DataView(paddedBuffer).setUint32(originalSize + paddingSize, originalSize, true);
+
+            const plaintextBlocks = new Uint32Array(paddedBuffer);
+            const N = plaintextBlocks.length; // Количество 32-битных блоков.
+
+            encryptStatus.textContent = `Создание гаммы (N=${N})...`;
+            
+            // 2. ГЕНЕРАЦИЯ ГАММЫ (КЛЮЧА)
+            const gamma = new Uint32Array(N);
+            crypto.getRandomValues(gamma);
+
+            // 3. ОБЕСПЕЧЕНИЕ НЕЧЕТНОСТИ ГАММЫ
+            // Каждый блок гаммы должен быть нечетным, чтобы существовал модульный обратный по модулю 2^N.
+            // Устанавливаем младший бит в 1.
+            for (let i = 0; i < N; i++) {
+                gamma[i] = gamma[i] | 1; 
+            }
+            
+            // 4. ОПРЕДЕЛЕНИЕ МОДУЛЯ
+            // Модуль M = 2^N. Используем BigInt, т.к. N может быть большим.
+            const M = 2n ** BigInt(N);
+
+            encryptStatus.textContent = 'Шифрование блоков... Это может занять много времени.';
+            
+            // 5. ШИФРОВАНИЕ
+            // Каждый блок шифруется по формуле: C = (P * G) mod M
+            const ciphertextBigInts = [];
+            for (let i = 0; i < N; i++) {
+                 // Преобразуем 32-битные блоки в BigInt для вычислений
+                const p_i = BigInt(plaintextBlocks[i]);
+                const g_i = BigInt(gamma[i]);
+                
+                const c_i = (p_i * g_i) % M;
+                ciphertextBigInts.push(c_i.toString()); // Сохраняем как строку
+                
+                // Обновляем статус для наглядности процесса
+                if (i % 100 === 0) {
+                     encryptStatus.textContent = `Шифрование блока ${i+1}/${N}...`;
+                }
+            }
+
+            encryptStatus.textContent = 'Создание файлов для скачивания...';
+
+            // 6. ФОРМИРОВАНИЕ ВЫХОДНЫХ ФАЙЛОВ
+            // Зашифрованные данные - это строки BigInt, разделенные переносом строки.
+            const encryptedContent = ciphertextBigInts.join('\n');
+            const encryptedBlob = new Blob([encryptedContent], { type: 'text/plain' });
+
+            // Ключ сохраняем в бинарном виде.
+            const keyBlob = new Blob([gamma.buffer], { type: 'application/octet-stream' });
+
+            // Создаем ссылки для скачивания
+            encryptDownloadLinks.innerHTML = ''; // Очищаем старые ссылки
+            const encryptedLink = createDownloadLink(encryptedBlob, fileToEncrypt.name + '.enc');
+            const keyLink = createDownloadLink(keyBlob, fileToEncrypt.name + '.key');
+            
+            encryptDownloadLinks.appendChild(encryptedLink);
+            encryptDownloadLinks.appendChild(keyLink);
+            
+            encryptStatus.textContent = 'Шифрование успешно завершено!';
+
+        } catch (error) {
+            console.error('Ошибка шифрования:', error);
+            encryptStatus.textContent = 'Произошла ошибка: ' + error.message;
+        }
+    });
+
+    // --- Логика расшифровки ---
+    decryptButton.addEventListener('click', async () => {
+        if (!fileToDecrypt || !keyFile) return;
+
+        try {
+            decryptStatus.textContent = 'Чтение файлов...';
+            // Читаем ключ как бинарные данные
+            const keyBuffer = await readFileAsArrayBuffer(keyFile);
+            const gamma = new Uint32Array(keyBuffer);
+            const N = gamma.length;
+
+            // Читаем зашифрованный файл как текст
+            const encryptedText = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsText(fileToDecrypt);
+            });
+            
+            const ciphertextBigIntsAsStrings = encryptedText.split('\n').filter(line => line.length > 0);
+
+            if (ciphertextBigIntsAsStrings.length !== N) {
+                throw new Error('Размер файла ключа не соответствует зашифрованному файлу.');
+            }
+
+            // 1. ОПРЕДЕЛЕНИЕ МОДУЛЯ
+            const M = 2n ** BigInt(N);
+            
+            decryptStatus.textContent = `Расшифровка блоков (N=${N})... Это может занять много времени.`;
+            
+            // 2. РАСШИФРОВКА
+            // Каждый блок расшифровывается: P = (C * G_inv) mod M
+            const plaintextBlocks = new Uint32Array(N);
+            for (let i = 0; i < N; i++) {
+                const g_i = BigInt(gamma[i]);
+                
+                // Находим модульное обратное для блока гаммы
+                const g_inv = modInverse(g_i, M);
+                if (g_inv === null) {
+                    throw new Error(`Невозможно найти обратный элемент для блока гаммы ${i}.`);
+                }
+
+                const c_i = BigInt(ciphertextBigIntsAsStrings[i]);
+
+                const p_i = (c_i * g_inv) % M;
+
+                // Важно: результат p_i может быть больше 2^32-1, но мы ожидаем,
+                // что исходный блок был 32-битным. Преобразуем обратно.
+                // Если p_i больше, значит что-то пошло не так (неверный ключ/алгоритм).
+                plaintextBlocks[i] = Number(p_i);
+
+                if (i % 100 === 0) {
+                     decryptStatus.textContent = `Расшифровка блока ${i+1}/${N}...`;
+                }
+            }
+            
+            decryptStatus.textContent = 'Восстановление исходного файла...';
+            
+            // 3. УДАЛЕНИЕ ДОПОЛНЕНИЯ (PADDING)
+            // Извлекаем исходный размер файла, который мы сохранили в конце.
+            const dataView = new DataView(plaintextBlocks.buffer);
+            const originalSize = dataView.getUint32(plaintextBlocks.buffer.byteLength - 4, true);
+
+            // Обрезаем буфер до исходного размера
+            const originalBuffer = plaintextBlocks.buffer.slice(0, originalSize);
+
+            // 4. ФОРМИРОВАНИЕ ВЫХОДНОГО ФАЙЛА
+            const decryptedBlob = new Blob([originalBuffer], { type: 'application/octet-stream' });
+            const decryptedLink = createDownloadLink(decryptedBlob, fileToDecrypt.name.replace('.enc', '.decrypted'));
+
+            decryptDownloadLinks.innerHTML = ''; // Очистка
+            decryptDownloadLinks.appendChild(decryptedLink);
+
+            decryptStatus.textContent = 'Расшифровка успешно завершена!';
+
+        } catch (error) {
+            console.error('Ошибка расшифровки:', error);
+            decryptStatus.textContent = 'Произошла ошибка: ' + error.message;
+        }
+    });
+});
+</script>
+
+</body>
+</html>

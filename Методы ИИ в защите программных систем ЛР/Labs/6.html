@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Двухступенчатое сжатие и расшифровка</title>
+    
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            color: #333;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px 0;
+        }
+
+        .container {
+            background: #fff;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            width: 90%;
+            max-width: 800px;
+        }
+
+        h1, h2 {
+            text-align: center;
+        }
+
+        h1 {
+            color: #4a4a4a;
+            margin-bottom: 20px;
+        }
+
+        textarea {
+            width: calc(100% - 20px);
+            height: 100px;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 16px;
+            resize: vertical;
+        }
+        
+        input[type="text"] {
+            width: calc(100% - 22px);
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            margin-bottom: 15px;
+            font-size: 16px;
+        }
+
+        button {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            font-size: 16px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s ease;
+            display: block;
+            width: 100%;
+            margin-bottom: 20px;
+        }
+
+        button:hover {
+            background-color: #0056b3;
+        }
+        
+        button.decompress-btn {
+            background-color: #28a745;
+        }
+        
+        button.decompress-btn:hover {
+            background-color: #218838;
+        }
+
+        .results {
+            margin-top: 20px;
+            text-align: left;
+        }
+
+        h3 {
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+            margin-bottom: 15px;
+            color: #4a4a4a;
+        }
+        
+        h3.decompress-title {
+            border-color: #28a745;
+        }
+
+        .result-box {
+            background-color: #f9f9f9;
+            border: 1px solid #eee;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 15px;
+        }
+
+        h4 {
+            margin-top: 0;
+            color: #333;
+        }
+
+        .output {
+            word-wrap: break-word;
+            font-family: 'Courier New', Courier, monospace;
+            background-color: #e9e9e9;
+            padding: 10px;
+            border-radius: 3px;
+            white-space: pre-wrap;
+            min-height: 20px;
+        }
+        
+        hr {
+            border: 0;
+            height: 1px;
+            background-image: linear-gradient(to right, rgba(0, 0, 0, 0), rgba(0, 0, 0, 0.75), rgba(0, 0, 0, 0));
+            margin: 40px 0;
+        }
+        
+        label {
+            display: block;
+            text-align: left;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Сжатие и Расшифровка</h1>
+        
+        <!-- Секция Сжатия -->
+        <section id="compression">
+            <h2>Сжатие (Compression)</h2>
+            <label for="inputText">Введите текст для сжатия:</label>
+            <textarea id="inputText" placeholder="Например: test, a test, a test..."></textarea>
+            <button id="compressButton">Сжать</button>
+            
+            <div class="results">
+                <h3 class="compress-title">Результаты сжатия:</h3>
+                
+                <div class="result-box">
+                    <h4>Этап 1: LZW коды</h4>
+                    <div id="lzwOutput" class="output"></div>
+                </div>
+                
+                <div class="result-box">
+                    <h4>Этап 2.1: Модель частот (КЛЮЧ для расшифровки - скопируйте это)</h4>
+                    <div id="freqModelOutput" class="output"></div>
+                </div>
+                
+                <div class="result-box">
+                    <h4>Этап 2.2: Арифметическое кодирование (сжатое число)</h4>
+                    <div id="arithmeticOutput" class="output"></div>
+                </div>
+            </div>
+        </section>
+        
+        <hr>
+        
+        <!-- Секция Расшифровки -->
+        <section id="decompression">
+            <h2>Расшифровка (Decompression)</h2>
+            
+            <label for="compressedNumberInput">Вставьте сжатое число:</label>
+            <input type="text" id="compressedNumberInput" placeholder="Вставьте число из поля 'Арифметическое кодирование'">
+            
+            <label for="freqModelInput">Вставьте модель частот (JSON):</label>
+            <textarea id="freqModelInput" placeholder="Вставьте сюда скопированную модель частот"></textarea>
+            
+            <button id="decompressButton" class="decompress-btn">Расшифровать</button>
+            
+            <div class="results">
+                <h3 class="decompress-title">Результаты расшифровки:</h3>
+                
+                <div class="result-box">
+                    <h4>Этап 1: Восстановленные LZW коды</h4>
+                    <div id="decodedLzwOutput" class="output"></div>
+                </div>
+                
+                <div class="result-box">
+                    <h4>Этап 2: Исходный текст</h4>
+                    <div id="finalTextOutput" class="output"></div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+    <script>
+        // --- ЛОГИКА СЖАТИЯ ---
+        
+        document.getElementById('compressButton').addEventListener('click', () => {
+            const inputText = document.getElementById('inputText').value;
+            // Очищаем все поля вывода
+            document.getElementById('lzwOutput').textContent = '';
+            document.getElementById('freqModelOutput').textContent = '';
+            document.getElementById('arithmeticOutput').textContent = '';
+
+            if (inputText) {
+                // Этап 1: LZW сжатие
+                const lzwEncoded = lzwEncode(inputText);
+                document.getElementById('lzwOutput').textContent = lzwEncoded.join(', ');
+
+                if (lzwEncoded.length > 0) {
+                    // Этап 2: Арифметическое кодирование
+                    const { encoded, model } = arithmeticEncode(lzwEncoded);
+                    
+                    document.getElementById('freqModelOutput').textContent = JSON.stringify(model, null, 2);
+                    document.getElementById('arithmeticOutput').textContent = encoded;
+                }
+            }
+        });
+
+        // LZW кодирование
+        // Цель: заменить повторяющиеся подстроки кодами из динамического словаря
+        function lzwEncode(s) {
+            const dict = {}; // Начальный словарь: все одиночные символы ASCII
+            for (let i = 0; i < 256; i++) dict[String.fromCharCode(i)] = i;
+
+            let p = "";      // Аккумулятор текущей последовательности
+            let code = 256;  // Новые коды начинаются с 256
+            const out = [];
+
+            for (let i = 0; i < s.length; i++) {
+                const c = s.charAt(i);
+                const pc = p + c; // Проверяем новую комбинацию
+                if (dict.hasOwnProperty(pc)) {
+                    p = pc; // Расширяем текущую последовательность
+                } else {
+                    out.push(dict[p]); // Выводим код известной последовательности
+                    dict[pc] = code++; // Добавляем новую в словарь
+                    p = c;             // Начинаем новую последовательность
+                }
+            }
+
+            if (p !== "") out.push(dict[p]); // Финальный символ
+            return out;
+        }
+
+
+        // Арифметическое кодирование
+        // Цель: упаковать поток чисел в одно дробное число на основе вероятностей
+        function arithmeticEncode(input) {
+            // Подсчёт частот
+            const frequencies = {};
+            for (const symbol of input)
+                frequencies[symbol] = (frequencies[symbol] || 0) + 1;
+
+            const model = { frequencies, total: input.length };
+
+            // Вычисление вероятностей
+            const probabilities = {};
+            for (const symbol in frequencies)
+                probabilities[symbol] = frequencies[symbol] / input.length;
+
+            // Построение накопительных интервалов
+            const symbols = Object.keys(probabilities).sort((a, b) => a - b);
+            const cumulativeProbabilities = {};
+            let cumulative = 0;
+            for (const symbol of symbols) {
+                cumulativeProbabilities[symbol] = { low: cumulative, high: cumulative + probabilities[symbol] };
+                cumulative += probabilities[symbol];
+            }
+
+            // Итеративное сужение диапазона
+            let low = 0.0, high = 1.0;
+            for (const symbol of input) {
+                const range = high - low;
+                const { low: sLow, high: sHigh } = cumulativeProbabilities[symbol];
+                high = low + range * sHigh;
+                low = low + range * sLow;
+            }
+
+            // Среднее значение диапазона — финальный закодированный результат
+            return { encoded: (low + high) / 2, model };
+        }
+
+
+        // ЛОГИКА РАСШИФРОВКИ
+        
+        document.getElementById('decompressButton').addEventListener('click', () => {
+            const compressedNumber = parseFloat(document.getElementById('compressedNumberInput').value);
+            const freqModelText = document.getElementById('freqModelInput').value;
+            
+            // Очищаем поля вывода
+            document.getElementById('decodedLzwOutput').textContent = '';
+            document.getElementById('finalTextOutput').textContent = '';
+
+            if (isNaN(compressedNumber) || !freqModelText) {
+                alert("Пожалуйста, вставьте корректное сжатое число и модель частот.");
+                return;
+            }
+
+            try {
+                const model = JSON.parse(freqModelText);
+                if (!model.frequencies || !model.total) {
+                    throw new Error("Неверный формат модели.");
+                }
+
+                // Этап 1: Арифметическое декодирование
+                const decodedLzw = arithmeticDecode(compressedNumber, model);
+                document.getElementById('decodedLzwOutput').textContent = decodedLzw.join(', ');
+
+                // Этап 2: LZW декодирование
+                const finalText = lzwDecode(decodedLzw);
+                document.getElementById('finalTextOutput').textContent = finalText;
+
+            } catch (e) {
+                alert("Ошибка при расшифровке: " + e.message);
+            }
+        });
+
+        // Арифметическое декодирование
+        // Цель: пошагово "распаковать" дробное число обратно в последовательность кодов
+        function arithmeticDecode(value, model) {
+            const { frequencies, total } = model;
+
+            // Вычисление вероятностей и интервалов
+            const probabilities = {};
+            for (const s in frequencies)
+                probabilities[s] = frequencies[s] / total;
+
+            const symbols = Object.keys(probabilities).sort((a, b) => a - b);
+            const cumulativeProbabilities = {};
+            let cumulative = 0;
+            for (const s of symbols) {
+                cumulativeProbabilities[s] = { low: cumulative, high: cumulative + probabilities[s] };
+                cumulative += probabilities[s];
+            }
+
+            // Восстановление последовательности кодов
+            const decoded = [];
+            let low = 0.0, high = 1.0;
+
+            for (let i = 0; i < total; i++) {
+                const range = high - low;
+                const scaledValue = (value - low) / range;
+                let currentSymbol;
+                
+                // Находим, в какой интервал попало значение
+                for (const s of symbols) {
+                    const { low: sLow, high: sHigh } = cumulativeProbabilities[s];
+                    if (scaledValue >= sLow && scaledValue < sHigh) {
+                        currentSymbol = s;
+                        break;
+                    }
+                }
+
+                if (!currentSymbol) throw new Error("Некорректный символ при декодировании");
+
+                decoded.push(parseInt(currentSymbol));
+                const { low: sLow, high: sHigh } = cumulativeProbabilities[currentSymbol];
+                high = low + range * sHigh;
+                low = low + range * sLow;
+            }
+
+            return decoded;
+        }
+
+        // LZW декодирование
+        // Цель: восстановить текст по кодам словаря
+        function lzwDecode(codes) {
+            const dict = {};
+            for (let i = 0; i < 256; i++) dict[i] = String.fromCharCode(i);
+
+            let p = codes[0];
+            let out = dict[p];
+            let code = 256;
+            let phrase = dict[p];
+
+            for (let i = 1; i < codes.length; i++) {
+                const c = codes[i];
+                let entry;
+
+                if (dict[c]) {
+                    entry = dict[c];
+                } else if (c === code) {
+                    entry = phrase + phrase[0];
+                } else {
+                    throw new Error("Неверный LZW-код: " + c);
+                }
+
+                out += entry;
+                dict[code++] = phrase + entry[0];
+                phrase = entry;
+            }
+
+            return out;
+        }
+
+    </script>
+</body>
+</html>
