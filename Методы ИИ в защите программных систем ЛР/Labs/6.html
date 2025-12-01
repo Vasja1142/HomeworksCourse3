@@ -150,137 +150,220 @@
     </div>
 
     <script>
-        // --- LZW ---
-        function lzwEncode(s) {
-            const dict = {};
-            for (let i = 0; i < 256; i++) dict[String.fromCharCode(i)] = i;
-            let p = "", code = 256, out = [];
-            for (let i = 0; i < s.length; i++) {
-                let c = s.charAt(i), pc = p + c;
-                if (dict.hasOwnProperty(pc)) {
-                    p = pc;
+    // Настройка точности: 50 знаков (можно ставить хоть 100n, но будет медленнее)
+    const PRECISION_POWER = 50n; 
+    const SCALE = 10n ** PRECISION_POWER;
+
+    // --- LZW (без изменений) ---
+    function lzwEncode(s) {
+        if (!s) return [];
+        const dict = {};
+        for (let i = 0; i < 256; i++) dict[String.fromCharCode(i)] = i;
+        let p = "", code = 256, out = [];
+        for (let i = 0; i < s.length; i++) {
+            let c = s.charAt(i), pc = p + c;
+            if (dict.hasOwnProperty(pc)) {
+                p = pc;
+            } else {
+                out.push(dict[p]);
+                dict[pc] = code++;
+                p = c;
+            }
+        }
+        if (p !== "") out.push(dict[p]);
+        return out;
+    }
+
+    function lzwDecode(codes) {
+        if (!codes || codes.length === 0) return "";
+        const dict = {};
+        for (let i = 0; i < 256; i++) dict[i] = String.fromCharCode(i);
+        let p = codes[0], code = 256;
+        let out = dict[p], phrase = dict[p];
+        for (let i = 1; i < codes.length; i++) {
+            let c = codes[i];
+            let entry;
+            if (dict[c]) {
+                entry = dict[c];
+            } else {
+                if (c === code) {
+                    entry = phrase + phrase[0];
                 } else {
-                    out.push(dict[p]);
-                    dict[pc] = code++;
-                    p = c;
+                    return "Ошибка LZW";
                 }
             }
-            if (p !== "") out.push(dict[p]);
-            return out;
+            out += entry;
+            dict[code++] = phrase + entry[0];
+            phrase = entry;
+        }
+        return out;
+    }
+
+    // --- ARITHMETIC CODING (BigInt Версия) ---
+    
+    function arithmeticEncode(input) {
+        // 1. Модель частот
+        const freqs = {};
+        input.forEach(s => freqs[s] = (freqs[s] || 0) + 1);
+        const total = BigInt(input.length);
+        
+        // Сортируем символы
+        const symbols = Object.keys(freqs).map(Number).sort((a,b) => a-b);
+        
+        // Строим кумулятивные счетчики (в целых числах)
+        const ranges = {};
+        let cum = 0n;
+        symbols.forEach(s => {
+            let count = BigInt(freqs[s]);
+            ranges[s] = { l: cum, h: cum + count };
+            cum += count;
+        });
+
+        // 2. Кодирование
+        // Работаем в интервале [0, SCALE], где SCALE = 10^50
+        let low = 0n;
+        let high = SCALE;
+
+        for (let i = 0; i < input.length; i++) {
+            let s = input[i];
+            let range = high - low;
+            
+            // Формула: low = low + range * start / total
+            // Используем BigInt умножение перед делением для сохранения точности
+            let newHigh = low + (range * ranges[s].h) / total;
+            let newLow = low + (range * ranges[s].l) / total;
+            
+            low = newLow;
+            high = newHigh;
         }
 
-        function lzwDecode(codes) {
-            const dict = {};
-            for (let i = 0; i < 256; i++) dict[i] = String.fromCharCode(i);
-            let p = codes[0], code = 256;
-            let out = dict[p], phrase = dict[p];
-            for (let i = 1; i < codes.length; i++) {
-                let c = codes[i], entry = dict[c] ? dict[c] : (c === code ? phrase + phrase[0] : null);
-                if (!entry) throw new Error("Bad LZW");
-                out += entry;
-                dict[code++] = phrase + entry[0];
-                phrase = entry;
-            }
-            return out;
+        // Результат берем как (low + high) / 2
+        // Но для вывода нам нужно представить это как "0.xxxx..."
+        let resultBigInt = (low + high) / 2n;
+        
+        // Форматируем строку: добавляем ведущие нули, если число меньше SCALE
+        let resStr = resultBigInt.toString();
+        while (resStr.length < Number(PRECISION_POWER)) {
+            resStr = "0" + resStr;
+        }
+        
+        return { 
+            valStr: "0." + resStr, // Строковое представление длинного числа
+            model: { freqs, total: input.length } 
+        };
+    }
+
+    function arithmeticDecode(valStr, model) {
+        // Парсим модель
+        const { freqs, total: totalNum } = model;
+        const total = BigInt(totalNum);
+        
+        // Восстанавливаем BigInt значение из строки "0.12345..."
+        let decimalPart = valStr.split('.')[1];
+        if (!decimalPart) throw new Error("Неверный формат числа");
+        
+        // Если точность при вводе меньше ожидаемой, дополняем нулями
+        if (decimalPart.length < Number(PRECISION_POWER)) {
+            decimalPart = decimalPart.padEnd(Number(PRECISION_POWER), '0');
+        } 
+        // Если больше - обрезаем (или оставляем, BigInt стерпит)
+        else if (decimalPart.length > Number(PRECISION_POWER)) {
+             decimalPart = decimalPart.slice(0, Number(PRECISION_POWER));
         }
 
-        // --- Arithmetic ---
-        function arithmeticEncode(input) {
-            const freqs = {};
-            input.forEach(s => freqs[s] = (freqs[s] || 0) + 1);
-            const total = input.length;
-            const probs = {};
+        const val = BigInt(decimalPart);
+        
+        // Строим диапазоны
+        const symbols = Object.keys(freqs).map(Number).sort((a,b) => a-b);
+        const ranges = {};
+        let cum = 0n;
+        symbols.forEach(s => {
+            let count = BigInt(freqs[s]);
+            ranges[s] = { l: cum, h: cum + count };
+            cum += count;
+        });
 
-            // Сортируем ключи, чтобы порядок был детерминированным
-            const symbols = Object.keys(freqs).map(Number).sort((a, b) => a - b);
-            let cum = 0;
-            const ranges = {};
-
-            symbols.forEach(s => {
-                let p = freqs[s] / total;
-                ranges[s] = { l: cum, h: cum + p };
-                cum += p;
-            });
-
-            let low = 0.0, high = 1.0;
-            input.forEach(s => {
-                let range = high - low;
-                low = low + range * ranges[s].l;
-                high = low + range * (ranges[s].h - ranges[s].l); // Правильный пересчет верхней границы
-            });
-
-            return { val: (low + high) / 2, model: { freqs, total } };
-        }
-
-        function arithmeticDecode(val, model) {
-            const { freqs, total } = model;
-            const symbols = Object.keys(freqs).map(Number).sort((a, b) => a - b);
-            let cum = 0;
-            const ranges = {};
-            symbols.forEach(s => {
-                let p = freqs[s] / total;
-                ranges[s] = { l: cum, h: cum + p };
-                cum += p;
-            });
-
-            let output = [];
-            let low = 0.0, high = 1.0;
-
-            // Важно: в реальном арифметическом кодировании с float precision issue
-            // этот цикл может быть проблематичным для длинных последовательностей.
-            // Для демонстрации работает на коротких.
-            for (let i = 0; i < total; i++) {
-                let range = high - low;
-                let target = (val - low) / range;
-
-                for (let s of symbols) {
-                    if (target >= ranges[s].l && target < ranges[s].h) {
-                        output.push(s);
-                        high = low + range * ranges[s].h;
-                        low = low + range * ranges[s].l; // Важно обновлять low ПОСЛЕ high
-                        break;
-                    }
+        // Декодирование
+        let output = [];
+        let low = 0n;
+        let high = SCALE;
+        
+        for(let i=0; i<totalNum; i++) {
+            let range = high - low;
+            
+            // Нам нужно найти символ S, для которого:
+            // low + range*ranges[S].l/total <= val < low + range*ranges[S].h/total
+            // Преобразуем неравенство, чтобы избавиться от деления:
+            // (val - low) * total / range
+            
+            // "Target" - это проекция значения val на диапазон [0, total)
+            let target = ((val - low) * total) / range;
+            
+            let found = false;
+            for(let s of symbols) {
+                if(target >= ranges[s].l && target < ranges[s].h) {
+                    output.push(s);
+                    
+                    let newHigh = low + (range * ranges[s].h) / total;
+                    let newLow = low + (range * ranges[s].l) / total;
+                    
+                    low = newLow;
+                    high = newHigh;
+                    found = true;
+                    break;
                 }
             }
-            return output;
+            if (!found) break; 
         }
+        return output;
+    }
 
-        // --- Handlers ---
-        function runCompression() {
-            const text = document.getElementById('inputText').value;
-            if (!text) return alert("Введите текст!");
+    // --- UI Handlers ---
+    function runCompression() {
+        const text = document.getElementById('inputText').value;
+        if(!text) return alert("Введите текст!");
 
+        try {
             // 1. LZW
             const lzwCodes = lzwEncode(text);
             document.getElementById('lzwResult').textContent = lzwCodes.join(', ');
 
-            // 2. Arithmetic
+            // 2. Arithmetic (BigInt)
             const arith = arithmeticEncode(lzwCodes);
-
-            document.getElementById('arithmeticResult').textContent = arith.val;
+            
+            document.getElementById('arithmeticResult').textContent = arith.valStr;
             document.getElementById('modelResult').textContent = JSON.stringify(arith.model);
-
+            
             document.getElementById('compressionResults').style.display = 'block';
+        } catch (e) {
+            alert("Ошибка: " + e.message);
+            console.error(e);
         }
+    }
 
-        function runDecompression() {
-            try {
-                const val = parseFloat(document.getElementById('encodedInput').value);
-                const model = JSON.parse(document.getElementById('modelInput').value);
+    function runDecompression() {
+        try {
+            const valStr = document.getElementById('encodedInput').value;
+            const modelStr = document.getElementById('modelInput').value;
+            
+            if (!valStr || !modelStr) return alert("Заполните поля!");
 
-                // 1. Arithmetic Decode
-                const lzwCodes = arithmeticDecode(val, model);
+            const model = JSON.parse(modelStr);
 
-                // 2. LZW Decode
-                const text = lzwDecode(lzwCodes);
-
-                document.getElementById('finalResult').textContent = text;
-                document.getElementById('decompressionResults').style.display = 'block';
-            } catch (e) {
-                alert("Ошибка декодирования: " + e.message);
-            }
+            // 1. Arithmetic Decode
+            const lzwCodes = arithmeticDecode(valStr, model);
+            
+            // 2. LZW Decode
+            const text = lzwDecode(lzwCodes);
+            
+            document.getElementById('finalResult').textContent = text;
+            document.getElementById('decompressionResults').style.display = 'block';
+        } catch(e) {
+            alert("Ошибка декодирования: " + e.message);
+            console.error(e);
         }
-    </script>
+    }
+</script>
 </body>
 
 </html>
