@@ -169,7 +169,7 @@
                     const keyBuffer = new ArrayBuffer(blockCount * 8);
                     const keyView = new DataView(keyBuffer);
                     // Crypto.getRandomValues работает макс с 65536 байтами, нужно циклом если файл большой
-                    // Для простоты используем упрощенную генерацию BigInt (в проде нужен CSPRNG)
+                    // Для простоты используем упрощенную генерацию BigInt
                     for (let i = 0; i < blockCount; i++) {
                         // Генерируем случайное 64-битное число
                         const rnd = BigInt(Math.floor(Math.random() * Number.MAX_SAFE_INTEGER)) *
