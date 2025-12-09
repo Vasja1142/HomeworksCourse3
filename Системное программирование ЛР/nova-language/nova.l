@@ -16,6 +16,8 @@ ID          {LETTER}({LETTER}|{DIGIT})*
 
 %%
 
+"#".*       { /* Игнорируем комментарии (начинаются с #) */ }
+
 "---"       { return T_BLOCK_END; }
 
 "int"       { return T_TYPE_INT; }
@@ -28,11 +30,18 @@ ID          {LETTER}({LETTER}|{DIGIT})*
 "loop"      { return T_LOOP; }
 "while"     { return T_WHILE; }
 
+"func"      { return T_FUNC; }
+"return"    { return T_RETURN; }
+"entry"     { return T_ENTRY; }
+
 ">>>"       { return T_PRINT_OP; }
 "^"         { return T_INPUT_OP; }
 
-"["         { return T_LBRACKET; } /* <--- НОВОЕ */
-"]"         { return T_RBRACKET; } /* <--- НОВОЕ */
+"["         { return T_LBRACKET; }
+"]"         { return T_RBRACKET; }
+"("         { return T_LPAREN; }
+")"         { return T_RPAREN; }
+","         { return T_COMMA; }
 
 "="         { return T_ASSIGN; }
 "=="        { return T_EQ; }
@@ -52,6 +61,6 @@ ID          {LETTER}({LETTER}|{DIGIT})*
 [\n]        { return T_NEWLINE; }
 [ \t\r]+    { /* Игнорируем пробелы */ }
 
-.           { printf("Error: Unknown character %s\n", yytext); exit(1); }
+.           { fprintf(stderr, "Lexer Error: Unknown char %s\n", yytext); exit(1); }
 
 %%

@@ -1,41 +1,74 @@
->>> "--- ТЕСТ ЯЗЫКА NOVA ---"
-
->>> "1. Тест строк. Введите имя:"
-str name = ^
->>> "Привет, "
->>> name
-
->>> "2. Тест дробных чисел (FLOAT). Введите радиус круга:"
-float r = ^
-float pi = 3.14
-float area = r * r * pi
->>> "Площадь круга:"
->>> area
-
->>> "3. Тест условий (IF/ELSE). Введите число:"
-int x = ^
-if x > 10
-    >>> "Число больше 10"
-else
-    >>> "Число меньше или равно 10"
+# --- МОДУЛЬ РАСЧЕТОВ ---
+func calc_metric(val, coef)
+    int res = val * coef
+    return res
 ---
 
->>> "4. Тест простого цикла (LOOP). Повторим 3 раза:"
-loop 3
-    >>> "Это цикл loop"
+# --- ГЛАВНЫЙ МОДУЛЬ ---
+entry
+
+>>> "=============================================="
+>>> " SYSTEM: AUTOMATED DATA ANALYSIS (DEBUG MODE) "
+>>> "=============================================="
+
+>>> "[INPUT] Введите ID оператора (String):"
+str operator_id = ^
+
+>>> "[INIT] Генерация модели (Тип List)..."
+>>> "       Вызов встроенной функции fibonacci(1, 8)"
+list load_factors = fibonacci(1, 8)
+
+>>> "[INPUT] Введите порог тревоги (Int), например 100:"
+int threshold = ^
+
+# Инициализация лог-файла (Создаем новый)
+file_write("system_log.txt", "--- START OF LOG ---")
+
+>>> "[SYSTEM] Запуск цикла обработки (WHILE i < 5)..."
+int steps = 5
+int i = 0
+loop 5
+    >>> steps
+    steps = steps - 1
+---
+while i < steps
+    >>> "----------------------------------------------"
+    >>> "[LOOP] Итерация №:"
+    >>> i
+    
+    int sensor_val = random(10, 30)
+    >>> "[DATA] 1. Значение датчика:"
+    >>> sensor_val
+    
+    int current_factor = load_factors[i]
+    >>> "[DATA] 2. Коэффициент:"
+    >>> current_factor
+    
+    int metric = calc_metric(sensor_val, current_factor)
+    >>> "[CALC] 3. Метрика:"
+    >>> metric
+    
+    >>> "[LOGIC] 4. Проверка условия..."
+    
+    if metric > threshold
+        >>> "        -> STATUS: CRITICAL"
+        # ДОБАВЛЯЕМ запись в файл (Append)
+        file_append("system_log.txt", "ALERT: Threshold exceeded")
+    else
+        >>> "        -> STATUS: NORMAL"
+        # ДОБАВЛЯЕМ запись в файл (Append)
+        file_append("system_log.txt", "INFO: System stable")
+    ---
+    i = i + 1
 ---
 
->>> "5. Тест цикла с условием (WHILE). Обратный отсчет от:"
-int count = ^
-while count > 0
-    >>> count
-    count = count - 1
----
+>>> "----------------------------------------------"
+>>> "[MATH] Расчет эффективности (99.0 * 0.55):"
+float base_efficiency = 99.0
+float degradation = 0.55
+float final_eff = base_efficiency * degradation
+>>> final_eff
 
->>> "6. Тест массивов (LIST). Введите не менее 2 чисел через пробел:"
-list arr = ^
->>> "Второй элемент:"
-int val = arr[1]
->>> val
-
->>> "--- ТЕСТ ЗАВЕРШЕН ---"
+>>> "=============================================="
+>>> "   ПРОГРАММА ЗАВЕРШЕНА.                       "
+>>> "=============================================="

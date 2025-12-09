@@ -63,24 +63,30 @@ extern int yydebug;
     T_LOOP = 264,                  /* T_LOOP  */
     T_WHILE = 265,                 /* T_WHILE  */
     T_BLOCK_END = 266,             /* T_BLOCK_END  */
-    T_PRINT_OP = 267,              /* T_PRINT_OP  */
-    T_INPUT_OP = 268,              /* T_INPUT_OP  */
-    T_ASSIGN = 269,                /* T_ASSIGN  */
-    T_EQ = 270,                    /* T_EQ  */
-    T_NEQ = 271,                   /* T_NEQ  */
-    T_GT = 272,                    /* T_GT  */
-    T_LT = 273,                    /* T_LT  */
-    T_PLUS = 274,                  /* T_PLUS  */
-    T_MINUS = 275,                 /* T_MINUS  */
-    T_MUL = 276,                   /* T_MUL  */
-    T_DIV = 277,                   /* T_DIV  */
-    T_LBRACKET = 278,              /* T_LBRACKET  */
-    T_RBRACKET = 279,              /* T_RBRACKET  */
-    T_NEWLINE = 280,               /* T_NEWLINE  */
-    T_ID = 281,                    /* T_ID  */
-    T_VAL_INT = 282,               /* T_VAL_INT  */
-    T_VAL_FLOAT = 283,             /* T_VAL_FLOAT  */
-    T_VAL_STR = 284                /* T_VAL_STR  */
+    T_FUNC = 267,                  /* T_FUNC  */
+    T_RETURN = 268,                /* T_RETURN  */
+    T_ENTRY = 269,                 /* T_ENTRY  */
+    T_PRINT_OP = 270,              /* T_PRINT_OP  */
+    T_INPUT_OP = 271,              /* T_INPUT_OP  */
+    T_ASSIGN = 272,                /* T_ASSIGN  */
+    T_EQ = 273,                    /* T_EQ  */
+    T_NEQ = 274,                   /* T_NEQ  */
+    T_GT = 275,                    /* T_GT  */
+    T_LT = 276,                    /* T_LT  */
+    T_PLUS = 277,                  /* T_PLUS  */
+    T_MINUS = 278,                 /* T_MINUS  */
+    T_MUL = 279,                   /* T_MUL  */
+    T_DIV = 280,                   /* T_DIV  */
+    T_LBRACKET = 281,              /* T_LBRACKET  */
+    T_RBRACKET = 282,              /* T_RBRACKET  */
+    T_LPAREN = 283,                /* T_LPAREN  */
+    T_RPAREN = 284,                /* T_RPAREN  */
+    T_COMMA = 285,                 /* T_COMMA  */
+    T_NEWLINE = 286,               /* T_NEWLINE  */
+    T_ID = 287,                    /* T_ID  */
+    T_VAL_INT = 288,               /* T_VAL_INT  */
+    T_VAL_FLOAT = 289,             /* T_VAL_FLOAT  */
+    T_VAL_STR = 290                /* T_VAL_STR  */
   };
   typedef enum yytokentype yytoken_kind_t;
 #endif
@@ -89,11 +95,11 @@ extern int yydebug;
 #if ! defined YYSTYPE && ! defined YYSTYPE_IS_DECLARED
 union YYSTYPE
 {
-#line 10 "nova.y"
+#line 11 "nova.y"
 
     char* str_val;
 
-#line 97 "nova.tab.h"
+#line 103 "nova.tab.h"
 
 };
 typedef union YYSTYPE YYSTYPE;
