@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="ru">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Pawn No-If Math</title>
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #111;
+            color: white;
+            font-family: sans-serif;
+        }
+
+        canvas {
+            display: block;
+            cursor: move;
+        }
+
+        #ui-container {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            background: rgba(0, 0, 0, 0.85);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid #444;
+            width: 280px;
+            pointer-events: auto;
+        }
+
+        h2 {
+            margin-top: 0;
+            margin-bottom: 15px;
+            font-size: 16px;
+            color: #ccc;
+            text-align: center;
+        }
+
+        .control-group {
+            margin-bottom: 12px;
+        }
+
+        .labels {
+            display: flex;
+            justify-content: space-between;
+            font-size: 14px;
+            margin-bottom: 5px;
+        }
+
+        input[type=range] {
+            width: 100%;
+            cursor: pointer;
+        }
+
+        /* Стилизация статуса */
+        #status-box {
+            margin-top: 15px;
+            padding: 10px;
+            text-align: center;
+            background: #222;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+
+        #loading {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            font-size: 24px;
+            color: #00ffcc;
+            pointer-events: none;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div id="ui-container">
+        <h2>Управление точкой</h2>
+
+        <div class="control-group">
+            <div class="labels"><span>X</span><span id="valX">0.0</span></div>
+            <input type="range" id="rangeX" min="-2.5" max="2.5" step="0.1" value="0">
+        </div>
+
+        <div class="control-group">
+            <div class="labels"><span>Y (Глубина)</span><span id="valY">1.5</span></div>
+            <input type="range" id="rangeY" min="-2.5" max="2.5" step="0.1" value="1.5">
+        </div>
+
+        <div class="control-group">
+            <div class="labels"><span>Z (Высота)</span><span id="valZ">0.5</span></div>
+            <input type="range" id="rangeZ" min="0" max="5.0" step="0.1" value="0.5">
+        </div>
+
+        <div id="status-box">ПРОВЕРКА</div>
+    </div>
+
+    <div id="loading">Генерация математической модели...</div>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        // ==========================================
+        // 1. МАТЕМАТИКА (БЕЗ IF)
+        // ==========================================
+
+        // Функция one: возвращает 1, если val <= 0, иначе 0.
+        // Используем тернарный оператор (это не if statement, а выражение), 
+        // но можно и чисто математически: (val <= 0) * 1
+        function one(val) {
+            return (val <= 0) * 1;
+        }
+
+        // Возвращает 1, если точка внутри пешки, и 0, если снаружи
+        function calculatePawn(x, y, z) {
+            // Константы формы
+            const r_base = 1.35;
+            const h_base_start = 0; const h_base_end = 0.3;
+
+            const h_body_start = 0.3; const h_body_end = 3.0;
+
+            const h_collar_center = 3.0;
+
+            const h_head_center = 3.65; const r_head = 0.5;
+
+            // 1. Цилиндр
+            // Условие: (внутри круга) * (выше низа) * (ниже верха)
+            // Имитация AND через умножение
+            const cyl = one(x * x + y * y - r_base * r_base) *
+                one(h_base_start - z) *
+                one(z - h_base_end);
+
+            // 2. Параболоид
+            const r_at_z = 0.2 + 0.15 * Math.pow(2.8 - z, 2);
+            const par = one(x * x + y * y - r_at_z * r_at_z) *
+                one(h_body_start - z) *
+                one(z - h_body_end);
+
+            // 3. Эллипсоид
+            const col = one((x * x) / (0.64) + (y * y) / (0.64) + (Math.pow(z - h_collar_center, 2) / (0.04)) - 1);
+
+            // 4. Шар
+            const sph = one(x * x + y * y + Math.pow(z - h_head_center, 2) - r_head * r_head);
+
+            // ОБЩЕЕ УСЛОВИЕ (OR)
+            // Складываем результаты. Если сумма > 0, значит мы попали хотя бы в одну фигуру.
+            const sum = cyl + par + col + sph;
+
+            // Нам нужно вернуть строго 1 или 0.
+            // Если sum >= 1 (внутри), то 0.1 - sum будет отрицательным -> one вернет 1.
+            // Если sum == 0 (снаружи), то 0.1 - sum будет положительным -> one вернет 0.
+            return one(0.1 - sum);
+        }
+
+        // ==========================================
+        // 2. ДВИЖОК ОТРИСОВКИ
+        // ==========================================
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        let width, height;
+
+        let points = [];
+        let angleX = -0.2;
+        let angleY = 0;
+
+        // Параметры камеры
+        const scale = 70;
+        const step = 0.03;
+
+        // Текущие координаты пользователя
+        let uX = 0, uY = 1.5, uZ = 0.5;
+
+        // Инициализация Canvas
+        function resize() {
+            width = window.innerWidth;
+            height = window.innerHeight;
+            canvas.width = width;
+            canvas.height = height;
+            draw();
+        }
+
+        // Генерация (вокселизация пространства)
+        function generateModel() {
+            const bounds = { x: 1.6, y: 1.6, z: 4.6 };
+            points = [];
+
+            for (let x = -bounds.x; x <= bounds.x; x += step) {
+                for (let y = -bounds.y; y <= bounds.y; y += step) {
+                    for (let z = 0; z <= bounds.z; z += step) {
+
+                        // Используем нашу мат. функцию
+                        const isInside = calculatePawn(x, y, z);
+
+                        // Здесь if используется только для оптимизации хранения массива (техническая необходимость),
+                        // сама логика принадлежности ("математика") выше без if.
+                        // Если очень нужно совсем без if - пришлось бы хранить и рисовать "пустые" прозрачные точки,
+                        // но это убьет производительность.
+                        if (isInside) {
+                            // Простейшая проверка поверхности для визуала
+                            // (просто проверяем, что хотя бы один сосед снаружи)
+                            const sumNeighbors = calculatePawn(x + step, y, z) + calculatePawn(x - step, y, z) +
+                                calculatePawn(x, y + step, z) + calculatePawn(x, y - step, z) +
+                                calculatePawn(x, y, z + step) + calculatePawn(x, y, z - step);
+
+                            // Если соседей внутри меньше 6, значит мы на краю
+                            if (sumNeighbors < 6) {
+                                points.push({ x, y, z });
+                            }
+                        }
+                    }
+                }
+            }
+            document.getElementById('loading').style.display = 'none';
+            updateUserPoint(); // Первый расчет
+        }
+
+        function project(x, y, z) {
+            let x1 = x * Math.cos(angleY) - y * Math.sin(angleY);
+            let y1 = x * Math.sin(angleY) + y * Math.cos(angleY);
+            let z2 = z * Math.cos(angleX) - y1 * Math.sin(angleX);
+            let y2 = z * Math.sin(angleX) + y1 * Math.cos(angleX);
+            let perspective = 10 / (10 + y2);
+            return {
+                x: width / 2 + x1 * scale * perspective,
+                y: height / 2 + 150 - z2 * scale * perspective,
+                size: perspective
+            };
+        }
+
+        function draw() {
+            // Фон
+            ctx.fillStyle = '#111';
+            ctx.fillRect(0, 0, width, height);
+
+            // 1. Рисуем пешку
+            ctx.fillStyle = 'rgba(100, 0, 255, 0.3)';
+            for (let i = 0; i < points.length; i++) {
+                const p = points[i];
+                const proj = project(p.x, p.y, p.z);
+                ctx.fillRect(proj.x, proj.y, 2 * proj.size, 2 * proj.size);
+            }
+
+            // 2. Рисуем точку пользователя
+            // Вычисляем цвет БЕЗ IF
+            const isInside = calculatePawn(uX, uY, uZ); // 1 или 0
+
+            // Математика цвета:
+            // Если 1 (внутри): Red=255, Blue=0
+            // Если 0 (снаружи): Red=0, Blue=255
+            const r = isInside * 255;
+            const b = (1 - isInside) * 255;
+            const colorString = 'rgb(' + r + ', 0, ' + b + ')';
+
+            // Обновляем текст и цвет текста БЕЗ IF (через массивы или просто JS-логику, 
+            // но для DOM проще присвоить). Для чистоты math-logic цвет вычислен выше.
+            const statusBox = document.getElementById('status-box');
+            statusBox.style.color = colorString;
+            statusBox.innerText = isInside ? "ВНУТРИ ФИГУРЫ" : "СНАРУЖИ";
+
+            // Рисуем сам кружок
+            const userProj = project(uX, uY, uZ);
+            ctx.fillStyle = colorString;
+            ctx.beginPath();
+            ctx.arc(userProj.x, userProj.y, 6 * userProj.size, 0, Math.PI * 2);
+            ctx.fill();
+            ctx.strokeStyle = 'white';
+            ctx.lineWidth = 1;
+            ctx.stroke();
+        }
+
+        // ==========================================
+        // 3. UI И СОБЫТИЯ
+        // ==========================================
+
+        const rangeX = document.getElementById('rangeX');
+        const rangeY = document.getElementById('rangeY');
+        const rangeZ = document.getElementById('rangeZ');
+        const valX = document.getElementById('valX');
+        const valY = document.getElementById('valY');
+        const valZ = document.getElementById('valZ');
+
+        function updateUserPoint() {
+            uX = parseFloat(rangeX.value);
+            uY = parseFloat(rangeY.value);
+            uZ = parseFloat(rangeZ.value);
+
+            valX.innerText = uX.toFixed(1);
+            valY.innerText = uY.toFixed(1);
+            valZ.innerText = uZ.toFixed(1);
+
+            draw();
+        }
+
+        rangeX.addEventListener('input', updateUserPoint);
+        rangeY.addEventListener('input', updateUserPoint);
+        rangeZ.addEventListener('input', updateUserPoint);
+
+        // Вращение мышкой
+        let isDragging = false;
+        let lastMouseX = 0, lastMouseY = 0;
+
+        window.addEventListener('mousedown', e => {
+            if (e.target.tagName !== 'INPUT') { // Чтобы не вращать, когда тянем ползунок
+                isDragging = true;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+            }
+        });
+        window.addEventListener('mouseup', () => isDragging = false);
+        window.addEventListener('mousemove', e => {
+            if (isDragging) {
+                angleY += (e.clientX - lastMouseX) * 0.01;
+                angleX += (e.clientY - lastMouseY) * 0.01;
+                lastMouseX = e.clientX;
+                lastMouseY = e.clientY;
+                draw();
+            }
+        });
+
+        window.addEventListener('resize', resize);
+
+        resize();
+        setTimeout(generateModel, 50);
+
+    </script>
+</body>
+
+</html>
