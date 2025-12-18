@@ -162,8 +162,27 @@ extern FILE *yyin, *yyout;
 #define EOB_ACT_END_OF_FILE 1
 #define EOB_ACT_LAST_MATCH 2
     
-    #define YY_LESS_LINENO(n)
-    #define YY_LINENO_REWIND_TO(ptr)
+    /* Note: We specifically omit the test for yy_rule_can_match_eol because it requires
+     *       access to the local variable yy_act. Since yyless() is a macro, it would break
+     *       existing scanners that call yyless() from OUTSIDE yylex.
+     *       One obvious solution it to make yy_act a global. I tried that, and saw
+     *       a 5% performance hit in a non-yylineno scanner, because yy_act is
+     *       normally declared as a register variable-- so it is not worth it.
+     */
+    #define  YY_LESS_LINENO(n) \
+            do { \
+                int yyl;\
+                for ( yyl = n; yyl < yyleng; ++yyl )\
+                    if ( yytext[yyl] == '\n' )\
+                        --yylineno;\
+            }while(0)
+    #define YY_LINENO_REWIND_TO(dst) \
+            do {\
+                const char *p;\
+                for ( p = yy_cp-1; p >= (dst); --p)\
+                    if ( *p == '\n' )\
+                        --yylineno;\
+            }while(0)
     
 /* Return all but the first "n" matched characters back to the input stream. */
 #define yyless(n) \
@@ -480,6 +499,12 @@ static const flex_int16_t yy_chk[140] =
        81,   81,   81,   81,   81,   81,   81,   81,   81
     } ;
 
+/* Table of booleans, true if rule could match eol. */
+static const flex_int32_t yy_rule_can_match_eol[38] =
+    {   0,
+0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 
+    0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0,     };
+
 static yy_state_type yy_last_accepting_state;
 static char *yy_last_accepting_cpos;
 
@@ -500,8 +525,8 @@ char *yytext;
 #include <stdlib.h>
 #include <string.h>
 #include "nova.tab.h"
-#line 503 "lex.yy.c"
-#line 504 "lex.yy.c"
+#line 528 "lex.yy.c"
+#line 529 "lex.yy.c"
 
 #define INITIAL 0
 
@@ -718,10 +743,10 @@ YY_DECL
 		}
 
 	{
-#line 17 "nova.l"
+#line 18 "nova.l"
 
 
-#line 724 "lex.yy.c"
+#line 749 "lex.yy.c"
 
 	while ( /*CONSTCOND*/1 )		/* loops until end-of-file is reached */
 		{
@@ -767,6 +792,16 @@ yy_find_action:
 
 		YY_DO_BEFORE_ACTION;
 
+		if ( yy_act != YY_END_OF_BUFFER && yy_rule_can_match_eol[yy_act] )
+			{
+			int yyl;
+			for ( yyl = 0; yyl < yyleng; ++yyl )
+				if ( yytext[yyl] == '\n' )
+					
+    yylineno++;
+;
+			}
+
 do_action:	/* This label is used only to access EOF actions. */
 
 		switch ( yy_act )
@@ -780,192 +815,192 @@ do_action:	/* This label is used only to access EOF actions. */
 
 case 1:
 YY_RULE_SETUP
-#line 19 "nova.l"
-{ /* Игнорируем комментарии (начинаются с #) */ }
+#line 20 "nova.l"
+{ /* Игнорируем комментарии */ }
 	YY_BREAK
 case 2:
 YY_RULE_SETUP
-#line 21 "nova.l"
+#line 22 "nova.l"
 { return T_BLOCK_END; }
 	YY_BREAK
 case 3:
 YY_RULE_SETUP
-#line 23 "nova.l"
+#line 24 "nova.l"
 { return T_TYPE_INT; }
 	YY_BREAK
 case 4:
 YY_RULE_SETUP
-#line 24 "nova.l"
+#line 25 "nova.l"
 { return T_TYPE_FLOAT; }
 	YY_BREAK
 case 5:
 YY_RULE_SETUP
-#line 25 "nova.l"
+#line 26 "nova.l"
 { return T_TYPE_STR; }
 	YY_BREAK
 case 6:
 YY_RULE_SETUP
-#line 26 "nova.l"
+#line 27 "nova.l"
 { return T_TYPE_LIST; }
 	YY_BREAK
 case 7:
 YY_RULE_SETUP
-#line 28 "nova.l"
+#line 29 "nova.l"
 { return T_IF; }
 	YY_BREAK
 case 8:
 YY_RULE_SETUP
-#line 29 "nova.l"
+#line 30 "nova.l"
 { return T_ELSE; }
 	YY_BREAK
 case 9:
 YY_RULE_SETUP
-#line 30 "nova.l"
+#line 31 "nova.l"
 { return T_LOOP; }
 	YY_BREAK
 case 10:
 YY_RULE_SETUP
-#line 31 "nova.l"
+#line 32 "nova.l"
 { return T_WHILE; }
 	YY_BREAK
 case 11:
 YY_RULE_SETUP
-#line 33 "nova.l"
+#line 34 "nova.l"
 { return T_FUNC; }
 	YY_BREAK
 case 12:
 YY_RULE_SETUP
-#line 34 "nova.l"
+#line 35 "nova.l"
 { return T_RETURN; }
 	YY_BREAK
 case 13:
 YY_RULE_SETUP
-#line 35 "nova.l"
+#line 36 "nova.l"
 { return T_ENTRY; }
 	YY_BREAK
 case 14:
 YY_RULE_SETUP
-#line 37 "nova.l"
+#line 38 "nova.l"
 { return T_PRINT_OP; }
 	YY_BREAK
 case 15:
 YY_RULE_SETUP
-#line 38 "nova.l"
+#line 39 "nova.l"
 { return T_INPUT_OP; }
 	YY_BREAK
 case 16:
 YY_RULE_SETUP
-#line 40 "nova.l"
+#line 41 "nova.l"
 { return T_LBRACKET; }
 	YY_BREAK
 case 17:
 YY_RULE_SETUP
-#line 41 "nova.l"
+#line 42 "nova.l"
 { return T_RBRACKET; }
 	YY_BREAK
 case 18:
 YY_RULE_SETUP
-#line 42 "nova.l"
+#line 43 "nova.l"
 { return T_LPAREN; }
 	YY_BREAK
 case 19:
 YY_RULE_SETUP
-#line 43 "nova.l"
+#line 44 "nova.l"
 { return T_RPAREN; }
 	YY_BREAK
 case 20:
 YY_RULE_SETUP
-#line 44 "nova.l"
+#line 45 "nova.l"
 { return T_COMMA; }
 	YY_BREAK
 case 21:
 YY_RULE_SETUP
-#line 46 "nova.l"
+#line 47 "nova.l"
 { return T_ASSIGN; }
 	YY_BREAK
 case 22:
 YY_RULE_SETUP
-#line 47 "nova.l"
+#line 48 "nova.l"
 { return T_EQ; }
 	YY_BREAK
 case 23:
 YY_RULE_SETUP
-#line 48 "nova.l"
+#line 49 "nova.l"
 { return T_NEQ; }
 	YY_BREAK
 case 24:
 YY_RULE_SETUP
-#line 49 "nova.l"
+#line 50 "nova.l"
 { return T_GT; }
 	YY_BREAK
 case 25:
 YY_RULE_SETUP
-#line 50 "nova.l"
+#line 51 "nova.l"
 { return T_LT; }
 	YY_BREAK
 case 26:
 YY_RULE_SETUP
-#line 51 "nova.l"
+#line 52 "nova.l"
 { return T_PLUS; }
 	YY_BREAK
 case 27:
 YY_RULE_SETUP
-#line 52 "nova.l"
+#line 53 "nova.l"
 { return T_MINUS; }
 	YY_BREAK
 case 28:
 YY_RULE_SETUP
-#line 53 "nova.l"
+#line 54 "nova.l"
 { return T_MUL; }
 	YY_BREAK
 case 29:
 YY_RULE_SETUP
-#line 54 "nova.l"
+#line 55 "nova.l"
 { return T_DIV; }
 	YY_BREAK
 case 30:
 YY_RULE_SETUP
-#line 56 "nova.l"
+#line 57 "nova.l"
 { yylval.str_val = strdup(yytext); return T_VAL_FLOAT; }
 	YY_BREAK
 case 31:
 YY_RULE_SETUP
-#line 57 "nova.l"
+#line 58 "nova.l"
 { yylval.str_val = strdup(yytext); return T_VAL_INT; }
 	YY_BREAK
 case 32:
 /* rule 32 can match eol */
 YY_RULE_SETUP
-#line 58 "nova.l"
+#line 59 "nova.l"
 { yylval.str_val = strdup(yytext); return T_VAL_STR; }
 	YY_BREAK
 case 33:
 YY_RULE_SETUP
-#line 59 "nova.l"
+#line 60 "nova.l"
 { yylval.str_val = strdup(yytext); return T_ID; }
 	YY_BREAK
 case 34:
 /* rule 34 can match eol */
 YY_RULE_SETUP
-#line 61 "nova.l"
+#line 62 "nova.l"
 { return T_NEWLINE; }
 	YY_BREAK
 case 35:
 YY_RULE_SETUP
-#line 62 "nova.l"
+#line 63 "nova.l"
 { /* Игнорируем пробелы */ }
 	YY_BREAK
 case 36:
 YY_RULE_SETUP
-#line 64 "nova.l"
-{ fprintf(stderr, "Lexer Error: Unknown char %s\n", yytext); exit(1); }
+#line 65 "nova.l"
+{ fprintf(stderr, "Lexer Error: Unknown char '%s' at line %d\n", yytext, yylineno); exit(1); }
 	YY_BREAK
 case 37:
 YY_RULE_SETUP
-#line 66 "nova.l"
+#line 67 "nova.l"
 ECHO;
 	YY_BREAK
-#line 968 "lex.yy.c"
+#line 1003 "lex.yy.c"
 case YY_STATE_EOF(INITIAL):
 	yyterminate();
 
@@ -1333,6 +1368,10 @@ static int yy_get_next_buffer (void)
 
 	*--yy_cp = (char) c;
 
+    if ( c == '\n' ){
+        --yylineno;
+    }
+
 	(yytext_ptr) = yy_bp;
 	(yy_hold_char) = *yy_cp;
 	(yy_c_buf_p) = yy_cp;
@@ -1409,6 +1448,11 @@ static int yy_get_next_buffer (void)
 	c = *(unsigned char *) (yy_c_buf_p);	/* cast for 8-bit char's */
 	*(yy_c_buf_p) = '\0';	/* preserve yytext */
 	(yy_hold_char) = *++(yy_c_buf_p);
+
+	if ( c == '\n' )
+		
+    yylineno++;
+;
 
 	return c;
 }
@@ -1876,6 +1920,9 @@ static int yy_init_globals (void)
      * This function is called from yylex_destroy(), so don't allocate here.
      */
 
+    /* We do not touch yylineno unless the option is enabled. */
+    yylineno =  1;
+    
     (yy_buffer_stack) = NULL;
     (yy_buffer_stack_top) = 0;
     (yy_buffer_stack_max) = 0;
@@ -1970,5 +2017,5 @@ void yyfree (void * ptr )
 
 #define YYTABLES_NAME "yytables"
 
-#line 66 "nova.l"
+#line 67 "nova.l"
 

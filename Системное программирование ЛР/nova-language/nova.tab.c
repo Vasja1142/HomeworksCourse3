@@ -69,15 +69,81 @@
 /* First part of user prologue.  */
 #line 1 "nova.y"
 
+#define _GNU_SOURCE
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <time.h>
+#include <stdarg.h>
 
 int yylex();
 void yyerror(const char *s);
+extern int yylineno; // Ссылка на счетчик строк из Lex
 
-#line 81 "nova.tab.c"
+/* --- ГЛОБАЛЬНЫЕ ПЕРЕМЕННЫЕ --- */
+char *FINAL_CODE = NULL;
+
+/* Функция для склеивания строк */
+char* concat(int count, ...) {
+    va_list ap;
+    int len = 0;
+    
+    va_start(ap, count);
+    for(int i=0; i<count; i++) {
+        char* s = va_arg(ap, char*);
+        if(s) len += strlen(s);
+    }
+    va_end(ap);
+    
+    char* res = (char*)calloc(len + 1, 1);
+    if(!res) return NULL;
+    
+    va_start(ap, count);
+    for(int i=0; i<count; i++) {
+        char* s = va_arg(ap, char*);
+        if(s) strcat(res, s);
+    }
+    va_end(ap);
+    return res;
+}
+
+const char* LIB_CODE = 
+"#include <stdio.h>\n"
+"#include <stdlib.h>\n"
+"#include <string.h>\n"
+"#include <time.h>\n"
+"void print_int(int x) { printf(\"%d\\n\", x); }\n"
+"void print_double(double x) { printf(\"%.2f\\n\", x); }\n"
+"void print_string(char* x) { printf(\"%s\\n\", x); }\n"
+"#define print_any(x) _Generic((x), int: print_int, double: print_double, char*: print_string)(x)\n"
+"void fill_fibonacci_range(int *arr, int start_idx, int end_idx) {\n"
+"    int f[1000]; f[0] = 0; f[1] = 1;\n"
+"    for(int i=2; i<=end_idx; i++) f[i] = f[i-1] + f[i-2];\n"
+"    int arr_i = 0;\n"
+"    for(int i=start_idx; i<=end_idx; i++) arr[arr_i++] = f[i];\n"
+"}\n"
+"void file_write(char* filename, char* text) {\n"
+"    FILE *f = fopen(filename, \"w\");\n"
+"    if (f) { fprintf(f, \"%s\\n\", text); fclose(f); printf(\"[LOG] File created: %s\\n\", filename); }\n"
+"    else { printf(\"[ERROR] Write failed: %s\\n\", filename); }\n"
+"}\n"
+"void file_append(char* filename, char* text) {\n"
+"    FILE *f = fopen(filename, \"a\");\n"
+"    if (f) { fprintf(f, \"%s\\n\", text); fclose(f); printf(\"[LOG] Data appended: %s\\n\", filename); }\n"
+"    else { printf(\"[ERROR] Append failed: %s\\n\", filename); }\n"
+"}\n"
+"int random_int(int min, int max) { return min + rand() % (max - min + 1); }\n"
+"int get_int() { char buf[100]; printf(\"> \"); fflush(stdout); if (!fgets(buf, 100, stdin)) exit(0); return atoi(buf); }\n"
+"double get_float() { char buf[100]; printf(\"> \"); fflush(stdout); if (!fgets(buf, 100, stdin)) exit(0); return strtod(buf, NULL); }\n"
+"char* get_str() { char buf[256]; printf(\"> \"); fflush(stdout); if (!fgets(buf, 256, stdin)) exit(0); buf[strcspn(buf, \"\\n\")] = 0; return strdup(buf); }\n"
+"void get_list(int *arr, int max_size) {\n"
+"    char buf[1024]; printf(\"> \"); fflush(stdout);\n"
+"    if (!fgets(buf, 1024, stdin)) exit(1); buf[strcspn(buf, \"\\n\")] = 0;\n"
+"    char *token = strtok(buf, \" \"); int i = 0;\n"
+"    while (token != NULL && i < max_size) { arr[i++] = atoi(token); token = strtok(NULL, \" \"); }\n"
+"}\n\n";
+
+
+#line 147 "nova.tab.c"
 
 # ifndef YY_CAST
 #  ifdef __cplusplus
@@ -143,32 +209,28 @@ enum yysymbol_kind_t
   YYSYMBOL_T_VAL_STR = 35,                 /* T_VAL_STR  */
   YYSYMBOL_YYACCEPT = 36,                  /* $accept  */
   YYSYMBOL_program = 37,                   /* program  */
-  YYSYMBOL_header = 38,                    /* header  */
+  YYSYMBOL_footer_opt = 38,                /* footer_opt  */
   YYSYMBOL_functions = 39,                 /* functions  */
   YYSYMBOL_function_def = 40,              /* function_def  */
-  YYSYMBOL_41_1 = 41,                      /* $@1  */
-  YYSYMBOL_func_args = 42,                 /* func_args  */
-  YYSYMBOL_entry_point = 43,               /* entry_point  */
-  YYSYMBOL_44_2 = 44,                      /* $@2  */
-  YYSYMBOL_statements = 45,                /* statements  */
-  YYSYMBOL_statement = 46,                 /* statement  */
-  YYSYMBOL_declaration = 47,               /* declaration  */
-  YYSYMBOL_assignment = 48,                /* assignment  */
-  YYSYMBOL_print_stmt = 49,                /* print_stmt  */
-  YYSYMBOL_if_head = 50,                   /* if_head  */
-  YYSYMBOL_if_block = 51,                  /* if_block  */
-  YYSYMBOL_52_3 = 52,                      /* $@3  */
-  YYSYMBOL_while_block = 53,               /* while_block  */
-  YYSYMBOL_54_4 = 54,                      /* $@4  */
-  YYSYMBOL_loop_block = 55,                /* loop_block  */
-  YYSYMBOL_56_5 = 56,                      /* $@5  */
-  YYSYMBOL_return_stmt = 57,               /* return_stmt  */
-  YYSYMBOL_void_func_call = 58,            /* void_func_call  */
-  YYSYMBOL_expression = 59,                /* expression  */
-  YYSYMBOL_call_args = 60,                 /* call_args  */
-  YYSYMBOL_call_arg_list = 61,             /* call_arg_list  */
-  YYSYMBOL_cmp_op = 62,                    /* cmp_op  */
-  YYSYMBOL_value = 63                      /* value  */
+  YYSYMBOL_func_args = 41,                 /* func_args  */
+  YYSYMBOL_entry_point = 42,               /* entry_point  */
+  YYSYMBOL_end_block_opt = 43,             /* end_block_opt  */
+  YYSYMBOL_statements = 44,                /* statements  */
+  YYSYMBOL_statement = 45,                 /* statement  */
+  YYSYMBOL_declaration = 46,               /* declaration  */
+  YYSYMBOL_assignment = 47,                /* assignment  */
+  YYSYMBOL_print_stmt = 48,                /* print_stmt  */
+  YYSYMBOL_if_head = 49,                   /* if_head  */
+  YYSYMBOL_if_block = 50,                  /* if_block  */
+  YYSYMBOL_while_block = 51,               /* while_block  */
+  YYSYMBOL_loop_block = 52,                /* loop_block  */
+  YYSYMBOL_return_stmt = 53,               /* return_stmt  */
+  YYSYMBOL_void_func_call = 54,            /* void_func_call  */
+  YYSYMBOL_expression = 55,                /* expression  */
+  YYSYMBOL_call_args = 56,                 /* call_args  */
+  YYSYMBOL_call_arg_list = 57,             /* call_arg_list  */
+  YYSYMBOL_cmp_op = 58,                    /* cmp_op  */
+  YYSYMBOL_value = 59                      /* value  */
 };
 typedef enum yysymbol_kind_t yysymbol_kind_t;
 
@@ -496,16 +558,16 @@ union yyalloc
 /* YYFINAL -- State number of the termination state.  */
 #define YYFINAL  3
 /* YYLAST -- Last index in YYTABLE.  */
-#define YYLAST   241
+#define YYLAST   248
 
 /* YYNTOKENS -- Number of terminals.  */
 #define YYNTOKENS  36
 /* YYNNTS -- Number of nonterminals.  */
-#define YYNNTS  28
+#define YYNNTS  24
 /* YYNRULES -- Number of rules.  */
 #define YYNRULES  61
 /* YYNSTATES -- Number of states.  */
-#define YYNSTATES  132
+#define YYNSTATES  133
 
 /* YYMAXUTOK -- Last valid token kind.  */
 #define YYMAXUTOK   290
@@ -558,13 +620,13 @@ static const yytype_int8 yytranslate[] =
 /* YYRLINE[YYN] -- Source line where rule number YYN was defined.  */
 static const yytype_int16 yyrline[] =
 {
-       0,    39,    39,    43,   110,   111,   112,   117,   116,   125,
-     126,   129,   136,   135,   148,   149,   153,   154,   155,   156,
-     157,   158,   159,   160,   161,   165,   167,   169,   173,   183,
-     185,   190,   195,   200,   205,   208,   207,   215,   214,   222,
-     221,   228,   233,   240,   241,   242,   243,   244,   246,   256,
-     257,   261,   262,   266,   267,   268,   269,   273,   274,   275,
-     276,   277
+       0,   103,   103,   111,   113,   118,   119,   127,   131,   141,
+     142,   145,   152,   162,   163,   167,   168,   176,   177,   178,
+     179,   180,   181,   182,   183,   184,   188,   191,   194,   197,
+     207,   210,   213,   216,   221,   226,   231,   239,   244,   252,
+     262,   272,   277,   282,   283,   284,   285,   286,   288,   297,
+     298,   302,   303,   310,   311,   312,   313,   317,   318,   319,
+     320,   321
 };
 #endif
 
@@ -586,10 +648,10 @@ static const char *const yytname[] =
   "T_INPUT_OP", "T_ASSIGN", "T_EQ", "T_NEQ", "T_GT", "T_LT", "T_PLUS",
   "T_MINUS", "T_MUL", "T_DIV", "T_LBRACKET", "T_RBRACKET", "T_LPAREN",
   "T_RPAREN", "T_COMMA", "T_NEWLINE", "T_ID", "T_VAL_INT", "T_VAL_FLOAT",
-  "T_VAL_STR", "$accept", "program", "header", "functions", "function_def",
-  "$@1", "func_args", "entry_point", "$@2", "statements", "statement",
-  "declaration", "assignment", "print_stmt", "if_head", "if_block", "$@3",
-  "while_block", "$@4", "loop_block", "$@5", "return_stmt",
+  "T_VAL_STR", "$accept", "program", "footer_opt", "functions",
+  "function_def", "func_args", "entry_point", "end_block_opt",
+  "statements", "statement", "declaration", "assignment", "print_stmt",
+  "if_head", "if_block", "while_block", "loop_block", "return_stmt",
   "void_func_call", "expression", "call_args", "call_arg_list", "cmp_op",
   "value", YY_NULLPTR
 };
@@ -601,7 +663,7 @@ yysymbol_name (yysymbol_kind_t yysymbol)
 }
 #endif
 
-#define YYPACT_NINF (-33)
+#define YYPACT_NINF (-32)
 
 #define yypact_value_is_default(Yyn) \
   ((Yyn) == YYPACT_NINF)
@@ -615,20 +677,20 @@ yysymbol_name (yysymbol_kind_t yysymbol)
    STATE-NUM.  */
 static const yytype_int16 yypact[] =
 {
-     -33,    16,   -33,   -33,     6,   -11,    -5,   -33,   -33,   -33,
-      19,   -33,    21,   -33,    30,    35,    52,    34,    43,    46,
-      48,    50,    53,   189,   189,   189,   -33,   189,   189,   -33,
-      13,   -33,   -33,   -33,   -33,   -33,   -33,   -33,   -33,   -33,
-     -33,   -33,   -33,    69,    73,    79,    82,     3,   -33,   -33,
-     -33,   208,   -33,    70,   208,   111,   137,   189,   189,     4,
-     -33,   -10,   189,    11,    55,   189,   189,   -33,   -33,   -33,
-     -33,   189,   189,   189,   189,   189,   -33,   189,   -33,   -33,
-     141,   186,    71,   -33,    77,   -33,    66,    81,   154,   158,
-      83,   168,    93,   116,    96,     8,     8,   -33,   -33,   172,
-     -33,   182,   -33,   189,    98,   -33,   -33,   -33,   -33,   -33,
-     -33,   -33,   189,   -33,   -33,   -33,   100,   -33,   -33,   -33,
-     -33,   195,   -33,   -33,   113,   189,   143,   -33,   212,   -33,
-      99,   -33
+     -32,    31,     7,   -32,   -25,    12,   -32,   -32,   -32,    27,
+     -32,    35,    30,    54,   -32,    38,    41,    48,    50,    52,
+      55,   213,   213,   213,   -32,   213,   213,   -32,    11,   -32,
+     -32,   -32,   -32,   -32,   -32,   -32,   -32,   -32,   -32,   -32,
+      56,    58,    79,    80,    84,    94,     6,   -32,   -32,   -32,
+     212,   -32,   110,   212,   136,   140,   213,   213,     5,   -32,
+     -32,   -10,    14,   104,     1,   213,   213,   -32,   -32,   -32,
+     -32,   213,   213,   213,   213,   213,   -32,   213,   -32,   -32,
+     153,   195,    95,   -32,    82,   -32,    68,    97,   157,    98,
+     167,   109,   171,   111,   122,   216,   125,     2,     2,   -32,
+     -32,   181,    99,   185,   -32,   213,   135,   -32,   -32,   -32,
+     -32,   -32,   -32,   -32,   -32,   -32,   213,   -32,   -32,   -32,
+     -32,   -32,   -32,   -32,   112,   199,   142,   -32,   213,   -32,
+      69,   137,   -32
 };
 
 /* YYDEFACT[STATE-NUM] -- Default reduction number in state STATE-NUM.
@@ -636,36 +698,36 @@ static const yytype_int16 yypact[] =
    means the default is an error.  */
 static const yytype_int8 yydefact[] =
 {
-       3,     0,     4,     1,     0,     0,     0,     6,     5,     2,
-       0,    12,     9,    14,    10,     0,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,     0,    13,     0,     0,    16,
-       0,    15,    17,    18,    19,    14,    20,    22,    21,    23,
-      24,    11,     7,     0,     0,     0,     0,    57,    58,    59,
-      60,     0,    43,     0,     0,     0,     0,     0,    49,     0,
-      14,     0,     0,     0,     0,     0,    49,    55,    56,    53,
-      54,     0,     0,     0,     0,     0,    39,     0,    41,    32,
-       0,    51,     0,    50,     0,    34,     0,     0,     0,     0,
-       0,     0,     0,     0,     0,    44,    45,    46,    47,     0,
-      14,     0,    31,     0,     0,    35,     8,    29,    25,    26,
-      30,    27,     0,    61,    48,    33,     0,    37,    52,    42,
-      14,     0,    40,    14,     0,     0,     0,    36,     0,    38,
-       0,    28
+       5,     0,     0,     1,     0,     0,     7,     6,     3,     0,
+      15,     2,     9,    14,     4,    10,     0,     0,     0,     0,
+       0,     0,     0,     0,    13,     0,     0,    17,     0,    12,
+      16,    18,    19,    20,    15,    21,    23,    22,    24,    25,
+       0,     0,     0,     0,     0,     0,    57,    58,    59,    60,
+       0,    43,     0,     0,     0,     0,     0,    49,     0,    11,
+      15,     0,     0,     0,     0,     0,    49,    55,    56,    53,
+      54,     0,     0,     0,     0,     0,    15,     0,    41,    35,
+       0,    51,     0,    50,     0,    37,     0,     0,     0,     0,
+       0,     0,     0,     0,     0,     0,     0,    44,    45,    46,
+      47,     0,     0,     0,    34,     0,     0,    15,     8,    30,
+      26,    31,    27,    32,    28,    33,     0,    61,    48,    36,
+      40,    15,    52,    42,     0,     0,     0,    38,     0,    39,
+       0,     0,    29
 };
 
 /* YYPGOTO[NTERM-NUM].  */
 static const yytype_int8 yypgoto[] =
 {
-     -33,   -33,   -33,   -33,   -33,   -33,   -33,   -33,   -33,   -32,
-     -33,   -33,   -33,   -33,   -33,   -33,   -33,   -33,   -33,   -33,
-     -33,   -33,   -33,   -23,    61,    54,    97,   -33
+     -32,   -32,   -32,   -32,   -32,   -32,   -32,   -32,   -31,   -32,
+     -32,   -32,   -32,   -32,   -32,   -32,   -32,   -32,   -32,   -21,
+      60,    51,   116,   -32
 };
 
 /* YYDEFGOTO[NTERM-NUM].  */
 static const yytype_int8 yydefgoto[] =
 {
-       0,     1,     2,     4,     8,    60,    15,     9,    13,    16,
-      31,    32,    33,    34,    35,    36,   120,    37,   123,    38,
-     100,    39,    40,    81,    82,    83,    75,    52
+       0,     1,    11,     2,     7,    16,     8,    29,    13,    30,
+      31,    32,    33,    34,    35,    36,    37,    38,    39,    81,
+      82,    83,    75,    51
 };
 
 /* YYTABLE[YYPACT[STATE-NUM]] -- What to do in state STATE-NUM.  If
@@ -673,102 +735,102 @@ static const yytype_int8 yydefgoto[] =
    number is the opposite.  If YYTABLE_NINF, syntax error.  */
 static const yytype_uint8 yytable[] =
 {
-      51,    53,    54,    59,    55,    56,    87,    19,    20,    21,
-      22,    23,    84,    24,    25,    85,     3,    27,     5,    28,
-       6,    10,    47,    48,    49,    50,    11,    90,    86,    65,
-      57,    66,    73,    74,    80,    29,    30,     7,    88,    89,
-      91,    58,    93,    47,    48,    49,    50,    12,    95,    96,
-      97,    98,    99,    14,   101,    19,    20,    21,    22,    23,
-      17,    24,    25,    26,    18,    27,    41,    28,   116,    19,
-      20,    21,    22,    23,    42,    24,    25,   106,    43,    27,
-      44,    28,    45,    29,    30,    46,    61,    92,   124,   121,
-      62,   126,    71,    72,    73,    74,    63,    29,    30,    64,
-     104,    76,   128,    19,    20,    21,    22,    23,   105,    24,
-      25,   122,   107,    27,   110,    28,    19,    20,    21,    22,
-      23,   112,    24,    25,   127,   114,    27,    94,    28,   119,
-     131,    29,    30,    71,    72,    73,    74,     0,    71,    72,
-      73,    74,    78,   113,    29,    30,    19,    20,    21,    22,
-      23,    77,    24,    25,   129,     0,    27,   118,    28,    71,
-      72,    73,    74,    71,    72,    73,    74,     0,    79,     0,
-       0,     0,   102,     0,    29,    30,    71,    72,    73,    74,
-      71,    72,    73,    74,     0,   108,     0,     0,     0,   109,
-      71,    72,    73,    74,    71,    72,    73,    74,     0,   111,
-       0,     0,     0,   115,    71,    72,    73,    74,    71,    72,
-      73,    74,     0,   117,     0,     0,   103,    71,    72,    73,
-      74,    47,    48,    49,    50,   125,    67,    68,    69,    70,
-      71,    72,    73,    74,    71,    72,    73,    74,     0,     0,
-       0,   130
+      50,    52,    53,    58,    54,    55,    87,     9,    17,    18,
+      19,    20,    21,    84,    22,    23,    85,    93,    25,     4,
+      26,     5,    46,    47,    48,    49,    73,    74,    56,    86,
+      89,     3,    65,    94,    66,    80,    27,    28,     6,    57,
+      88,    90,    92,    10,    95,   102,    46,    47,    48,    49,
+      97,    98,    99,   100,   101,    12,   103,    17,    18,    19,
+      20,    21,    15,    22,    23,    24,    14,    25,    40,    26,
+      41,    17,    18,    19,    20,    21,   124,    22,    23,   108,
+      42,    25,    43,    26,    44,    27,    28,    45,    59,    60,
+     126,    71,    72,    73,    74,   125,    61,    62,   131,    27,
+      28,    63,    17,    18,    19,    20,    21,   130,    22,    23,
+     120,    64,    25,   107,    26,    17,    18,    19,    20,    21,
+      91,    22,    23,   127,   106,    25,    96,    26,   109,   111,
+      27,    28,    71,    72,    73,    74,    46,    47,    48,    49,
+     113,    76,   115,    27,    28,    17,    18,    19,    20,    21,
+     116,    22,    23,   129,   118,    25,   122,    26,    71,    72,
+      73,    74,    71,    72,    73,    74,   123,    78,   132,    77,
+       0,    79,     0,    27,    28,    71,    72,    73,    74,    71,
+      72,    73,    74,     0,   104,     0,     0,     0,   110,    71,
+      72,    73,    74,    71,    72,    73,    74,     0,   112,     0,
+       0,     0,   114,    71,    72,    73,    74,    71,    72,    73,
+      74,     0,   119,     0,     0,     0,   121,    71,    72,    73,
+      74,    71,    72,    73,    74,   105,     0,     0,     0,   128,
+      67,    68,    69,    70,    71,    72,    73,    74,    71,    72,
+      73,    74,     0,   117,     0,    46,    47,    48,    49
 };
 
-static const yytype_int8 yycheck[] =
+static const yytype_int16 yycheck[] =
 {
-      23,    24,    25,    35,    27,    28,    16,     3,     4,     5,
-       6,     7,     8,     9,    10,    11,     0,    13,    12,    15,
-      14,    32,    32,    33,    34,    35,    31,    16,    60,    26,
-      17,    28,    24,    25,    57,    31,    32,    31,    61,    62,
-      63,    28,    65,    32,    33,    34,    35,    28,    71,    72,
-      73,    74,    75,    32,    77,     3,     4,     5,     6,     7,
-      30,     9,    10,    11,    29,    13,    32,    15,   100,     3,
-       4,     5,     6,     7,    31,     9,    10,    11,    32,    13,
-      32,    15,    32,    31,    32,    32,    17,    32,   120,   112,
-      17,   123,    22,    23,    24,    25,    17,    31,    32,    17,
-      29,    31,   125,     3,     4,     5,     6,     7,    31,     9,
-      10,    11,    31,    13,    31,    15,     3,     4,     5,     6,
-       7,    28,     9,    10,    11,    29,    13,    66,    15,    31,
-      31,    31,    32,    22,    23,    24,    25,    -1,    22,    23,
-      24,    25,    31,    27,    31,    32,     3,     4,     5,     6,
-       7,    54,     9,    10,    11,    -1,    13,   103,    15,    22,
+      21,    22,    23,    34,    25,    26,    16,    32,     3,     4,
+       5,     6,     7,     8,     9,    10,    11,    16,    13,    12,
+      15,    14,    32,    33,    34,    35,    24,    25,    17,    60,
+      16,     0,    26,    32,    28,    56,    31,    32,    31,    28,
+      61,    62,    63,    31,    65,    76,    32,    33,    34,    35,
+      71,    72,    73,    74,    75,    28,    77,     3,     4,     5,
+       6,     7,    32,     9,    10,    11,    31,    13,    30,    15,
+      29,     3,     4,     5,     6,     7,   107,     9,    10,    11,
+      32,    13,    32,    15,    32,    31,    32,    32,    32,    31,
+     121,    22,    23,    24,    25,   116,    17,    17,    29,    31,
+      32,    17,     3,     4,     5,     6,     7,   128,     9,    10,
+      11,    17,    13,    31,    15,     3,     4,     5,     6,     7,
+      16,     9,    10,    11,    29,    13,    66,    15,    31,    31,
+      31,    32,    22,    23,    24,    25,    32,    33,    34,    35,
+      31,    31,    31,    31,    32,     3,     4,     5,     6,     7,
+      28,     9,    10,    11,    29,    13,   105,    15,    22,    23,
+      24,    25,    22,    23,    24,    25,    31,    31,    31,    53,
+      -1,    31,    -1,    31,    32,    22,    23,    24,    25,    22,
+      23,    24,    25,    -1,    31,    -1,    -1,    -1,    31,    22,
       23,    24,    25,    22,    23,    24,    25,    -1,    31,    -1,
-      -1,    -1,    31,    -1,    31,    32,    22,    23,    24,    25,
-      22,    23,    24,    25,    -1,    31,    -1,    -1,    -1,    31,
-      22,    23,    24,    25,    22,    23,    24,    25,    -1,    31,
-      -1,    -1,    -1,    31,    22,    23,    24,    25,    22,    23,
-      24,    25,    -1,    31,    -1,    -1,    30,    22,    23,    24,
-      25,    32,    33,    34,    35,    30,    18,    19,    20,    21,
-      22,    23,    24,    25,    22,    23,    24,    25,    -1,    -1,
-      -1,    29
+      -1,    -1,    31,    22,    23,    24,    25,    22,    23,    24,
+      25,    -1,    31,    -1,    -1,    -1,    31,    22,    23,    24,
+      25,    22,    23,    24,    25,    30,    -1,    -1,    -1,    30,
+      18,    19,    20,    21,    22,    23,    24,    25,    22,    23,
+      24,    25,    -1,    27,    -1,    32,    33,    34,    35
 };
 
 /* YYSTOS[STATE-NUM] -- The symbol kind of the accessing symbol of
    state STATE-NUM.  */
 static const yytype_int8 yystos[] =
 {
-       0,    37,    38,     0,    39,    12,    14,    31,    40,    43,
-      32,    31,    28,    44,    32,    42,    45,    30,    29,     3,
-       4,     5,     6,     7,     9,    10,    11,    13,    15,    31,
-      32,    46,    47,    48,    49,    50,    51,    53,    55,    57,
-      58,    32,    31,    32,    32,    32,    32,    32,    33,    34,
-      35,    59,    63,    59,    59,    59,    59,    17,    28,    45,
-      41,    17,    17,    17,    17,    26,    28,    18,    19,    20,
-      21,    22,    23,    24,    25,    62,    31,    62,    31,    31,
-      59,    59,    60,    61,     8,    11,    45,    16,    59,    59,
-      16,    59,    32,    59,    60,    59,    59,    59,    59,    59,
-      56,    59,    31,    30,    29,    31,    11,    31,    31,    31,
-      31,    31,    28,    27,    29,    31,    45,    31,    61,    31,
-      52,    59,    11,    54,    45,    30,    45,    11,    59,    11,
-      29,    31
+       0,    37,    39,     0,    12,    14,    31,    40,    42,    32,
+      31,    38,    28,    44,    31,    32,    41,     3,     4,     5,
+       6,     7,     9,    10,    11,    13,    15,    31,    32,    43,
+      45,    46,    47,    48,    49,    50,    51,    52,    53,    54,
+      30,    29,    32,    32,    32,    32,    32,    33,    34,    35,
+      55,    59,    55,    55,    55,    55,    17,    28,    44,    32,
+      31,    17,    17,    17,    17,    26,    28,    18,    19,    20,
+      21,    22,    23,    24,    25,    58,    31,    58,    31,    31,
+      55,    55,    56,    57,     8,    11,    44,    16,    55,    16,
+      55,    16,    55,    16,    32,    55,    56,    55,    55,    55,
+      55,    55,    44,    55,    31,    30,    29,    31,    11,    31,
+      31,    31,    31,    31,    31,    31,    28,    27,    29,    31,
+      11,    31,    57,    31,    44,    55,    44,    11,    30,    11,
+      55,    29,    31
 };
 
 /* YYR1[RULE-NUM] -- Symbol kind of the left-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr1[] =
 {
-       0,    36,    37,    38,    39,    39,    39,    41,    40,    42,
-      42,    42,    44,    43,    45,    45,    46,    46,    46,    46,
-      46,    46,    46,    46,    46,    47,    47,    47,    47,    47,
-      47,    48,    49,    50,    51,    52,    51,    54,    53,    56,
-      55,    57,    58,    59,    59,    59,    59,    59,    59,    60,
-      60,    61,    61,    62,    62,    62,    62,    63,    63,    63,
-      63,    63
+       0,    36,    37,    38,    38,    39,    39,    39,    40,    41,
+      41,    41,    42,    43,    43,    44,    44,    45,    45,    45,
+      45,    45,    45,    45,    45,    45,    46,    46,    46,    46,
+      46,    46,    46,    46,    47,    48,    49,    50,    50,    51,
+      52,    53,    54,    55,    55,    55,    55,    55,    55,    56,
+      56,    57,    57,    58,    58,    58,    58,    59,    59,    59,
+      59,    59
 };
 
 /* YYR2[RULE-NUM] -- Number of symbols on the right-hand side of rule RULE-NUM.  */
 static const yytype_int8 yyr2[] =
 {
-       0,     2,     3,     0,     0,     2,     2,     0,     9,     0,
-       1,     3,     0,     5,     0,     2,     1,     1,     1,     1,
-       1,     1,     1,     1,     1,     5,     5,     5,    10,     5,
-       5,     4,     3,     5,     3,     0,     7,     0,     8,     0,
-       6,     3,     5,     1,     3,     3,     3,     3,     4,     0,
+       0,     2,     3,     0,     2,     0,     2,     2,     8,     0,
+       1,     3,     4,     1,     0,     0,     2,     1,     1,     1,
+       1,     1,     1,     1,     1,     1,     5,     5,     5,    10,
+       5,     5,     5,     5,     4,     3,     5,     3,     6,     7,
+       5,     3,     5,     1,     3,     3,     3,     3,     4,     0,
        1,     1,     3,     1,     1,     1,     1,     1,     1,     1,
        1,     4
 };
@@ -1233,367 +1295,361 @@ yyreduce:
   YY_REDUCE_PRINT (yyn);
   switch (yyn)
     {
-  case 3: /* header: %empty  */
-#line 43 "nova.y"
+  case 2: /* program: functions entry_point footer_opt  */
+#line 104 "nova.y"
     {
-        /* ГЕНЕРАЦИЯ БИБЛИОТЕКИ C */
-        printf("#include <stdio.h>\n");
-        printf("#include <stdlib.h>\n");
-        printf("#include <string.h>\n");
-        printf("#include <time.h>\n");
-
-        printf("#define print_any(x) _Generic((x), \\\n");
-        printf("    int: printf(\"%%d\\n\", x), \\\n");
-        printf("    double: printf(\"%%.2f\\n\", x), \\\n");
-        printf("    char*: printf(\"%%s\\n\", x) \\\n");
-        printf(")\n\n");
-
-        /* 1. ФИБОНАЧЧИ */
-        printf("void fill_fibonacci_range(int *arr, int start_idx, int end_idx) {\n");
-        printf("    int f[1000];\n");
-        printf("    f[0] = 0; f[1] = 1;\n");
-        printf("    for(int i=2; i<=end_idx; i++) f[i] = f[i-1] + f[i-2];\n");
-        printf("    int arr_i = 0;\n");
-        printf("    for(int i=start_idx; i<=end_idx; i++) {\n");
-        printf("        arr[arr_i++] = f[i];\n");
-        printf("    }\n");
-        printf("}\n\n");
-
-        /* 2. ФАЙЛЫ: ЗАПИСЬ (ПЕРЕЗАПИСЬ) */
-        printf("void file_write(char* filename, char* text) {\n");
-        printf("    FILE *f = fopen(filename, \"w\");\n");
-        printf("    if (f) {\n");
-        printf("        fprintf(f, \"%%s\\n\", text);\n");
-        printf("        fclose(f);\n");
-        printf("        printf(\"[LOG] File created: %%s\\n\", filename);\n");
-        printf("    } else { printf(\"[ERROR] Cannot open file %%s\\n\", filename); }\n");
-        printf("}\n\n");
-
-        /* 3. ФАЙЛЫ: ДОБАВЛЕНИЕ (APPEND) - НОВОЕ! */
-        printf("void file_append(char* filename, char* text) {\n");
-        printf("    FILE *f = fopen(filename, \"a\");\n"); /* "a" значит append */
-        printf("    if (f) {\n");
-        printf("        fprintf(f, \"%%s\\n\", text);\n");
-        printf("        fclose(f);\n");
-        printf("        printf(\"[LOG] Data appended to: %%s\\n\", filename);\n");
-        printf("    } else { printf(\"[ERROR] Cannot open file %%s\\n\", filename); }\n");
-        printf("}\n\n");
-
-        /* 4. RANDOM */
-        printf("int random_int(int min, int max) {\n");
-        printf("    return min + rand() %% (max - min + 1);\n");
-        printf("}\n\n");
-
-        /* 5. ВВОД */
-        printf("int get_int() {\n");
-        printf("    char buf[100]; printf(\"> \"); fflush(stdout);\n");
-        printf("    if (!fgets(buf, 100, stdin)) exit(0);\n");
-        printf("    return atoi(buf);\n");
-        printf("}\n");
-
-        printf("char* get_str() {\n");
-        printf("    char buf[256]; printf(\"> \"); fflush(stdout);\n");
-        printf("    if (!fgets(buf, 256, stdin)) exit(0);\n");
-        printf("    buf[strcspn(buf, \"\\n\")] = 0;\n");
-        printf("    return strdup(buf);\n");
-        printf("}\n\n");
-        
-        printf("/* --- КОНЕЦ БИБЛИОТЕКИ --- */\n\n");
+        FINAL_CODE = concat(3, LIB_CODE, ((yyvsp[-2].str_val) ? (yyvsp[-2].str_val) : ""), ((yyvsp[-1].str_val) ? (yyvsp[-1].str_val) : ""));
+        if ((yyvsp[-2].str_val)) free((yyvsp[-2].str_val));
+        if ((yyvsp[-1].str_val)) free((yyvsp[-1].str_val));
     }
-#line 1304 "nova.tab.c"
+#line 1306 "nova.tab.c"
     break;
 
-  case 7: /* $@1: %empty  */
-#line 117 "nova.y"
-    {
-        printf("int %s(%s) {\n", (yyvsp[-4].str_val), (yyvsp[-2].str_val)); 
-    }
+  case 5: /* functions: %empty  */
+#line 118 "nova.y"
+                       { (yyval.str_val) = NULL; }
 #line 1312 "nova.tab.c"
     break;
 
-  case 8: /* function_def: T_FUNC T_ID T_LPAREN func_args T_RPAREN T_NEWLINE $@1 statements T_BLOCK_END  */
-#line 121 "nova.y"
-    { printf("}\n\n"); }
-#line 1318 "nova.tab.c"
+  case 6: /* functions: functions function_def  */
+#line 119 "nova.y"
+                             { 
+        if ((yyvsp[-1].str_val)) {
+            (yyval.str_val) = concat(2, (yyvsp[-1].str_val), (yyvsp[0].str_val));
+            free((yyvsp[-1].str_val)); free((yyvsp[0].str_val));
+        } else {
+            (yyval.str_val) = (yyvsp[0].str_val);
+        }
+    }
+#line 1325 "nova.tab.c"
+    break;
+
+  case 7: /* functions: functions T_NEWLINE  */
+#line 127 "nova.y"
+                          { (yyval.str_val) = (yyvsp[-1].str_val); }
+#line 1331 "nova.tab.c"
+    break;
+
+  case 8: /* function_def: T_FUNC T_ID T_LPAREN func_args T_RPAREN T_NEWLINE statements T_BLOCK_END  */
+#line 132 "nova.y"
+    {
+        char *header;
+        asprintf(&header, "int %s(%s) {\n", (yyvsp[-6].str_val), (yyvsp[-4].str_val));
+        (yyval.str_val) = concat(3, header, (yyvsp[-1].str_val), "}\n\n");
+        free(header); free((yyvsp[-4].str_val)); free((yyvsp[-1].str_val));
+    }
+#line 1342 "nova.tab.c"
     break;
 
   case 9: /* func_args: %empty  */
-#line 125 "nova.y"
-                       { (yyval.str_val) = ""; }
-#line 1324 "nova.tab.c"
+#line 141 "nova.y"
+                       { (yyval.str_val) = strdup(""); }
+#line 1348 "nova.tab.c"
     break;
 
   case 10: /* func_args: T_ID  */
-#line 126 "nova.y"
+#line 142 "nova.y"
            { 
-        char b[100]; sprintf(b, "int %s", (yyvsp[0].str_val)); (yyval.str_val) = strdup(b); 
+        asprintf(&(yyval.str_val), "int %s", (yyvsp[0].str_val)); 
       }
-#line 1332 "nova.tab.c"
+#line 1356 "nova.tab.c"
     break;
 
   case 11: /* func_args: T_ID T_COMMA T_ID  */
-#line 129 "nova.y"
+#line 145 "nova.y"
                         { 
-        char b[200]; sprintf(b, "int %s, int %s", (yyvsp[-2].str_val), (yyvsp[0].str_val)); (yyval.str_val) = strdup(b); 
+        asprintf(&(yyval.str_val), "int %s, int %s", (yyvsp[-2].str_val), (yyvsp[0].str_val)); 
       }
-#line 1340 "nova.tab.c"
+#line 1364 "nova.tab.c"
     break;
 
-  case 12: /* $@2: %empty  */
-#line 136 "nova.y"
+  case 12: /* entry_point: T_ENTRY T_NEWLINE statements end_block_opt  */
+#line 153 "nova.y"
     {
-        printf("int main() {\n");
-        printf("    srand(time(NULL));\n");
+        char *main_header = "int main() {\n\tsrand(time(NULL));\n";
+        char *main_footer = "\n\treturn 0;\n}\n";
+        (yyval.str_val) = concat(3, main_header, (yyvsp[-1].str_val), main_footer);
+        free((yyvsp[-1].str_val));
     }
-#line 1349 "nova.tab.c"
-    break;
-
-  case 13: /* entry_point: T_ENTRY T_NEWLINE $@2 statements T_BLOCK_END  */
-#line 141 "nova.y"
-    {
-        /* main закрывается внизу */
-    }
-#line 1357 "nova.tab.c"
-    break;
-
-  case 25: /* declaration: T_TYPE_INT T_ID T_ASSIGN expression T_NEWLINE  */
-#line 166 "nova.y"
-      { printf("\tint %s = %s;\n", (yyvsp[-3].str_val), (yyvsp[-1].str_val)); }
-#line 1363 "nova.tab.c"
-    break;
-
-  case 26: /* declaration: T_TYPE_FLOAT T_ID T_ASSIGN expression T_NEWLINE  */
-#line 168 "nova.y"
-      { printf("\tdouble %s = %s;\n", (yyvsp[-3].str_val), (yyvsp[-1].str_val)); }
-#line 1369 "nova.tab.c"
-    break;
-
-  case 27: /* declaration: T_TYPE_STR T_ID T_ASSIGN expression T_NEWLINE  */
-#line 170 "nova.y"
-      { printf("\tchar *%s = %s;\n", (yyvsp[-3].str_val), (yyvsp[-1].str_val)); }
 #line 1375 "nova.tab.c"
     break;
 
-  case 28: /* declaration: T_TYPE_LIST T_ID T_ASSIGN T_ID T_LPAREN expression T_COMMA expression T_RPAREN T_NEWLINE  */
-#line 174 "nova.y"
+  case 15: /* statements: %empty  */
+#line 167 "nova.y"
+                       { (yyval.str_val) = strdup(""); }
+#line 1381 "nova.tab.c"
+    break;
+
+  case 16: /* statements: statements statement  */
+#line 168 "nova.y"
+                           { 
+        char *temp = concat(2, (yyvsp[-1].str_val), (yyvsp[0].str_val));
+        free((yyvsp[-1].str_val)); free((yyvsp[0].str_val));
+        (yyval.str_val) = temp;
+    }
+#line 1391 "nova.tab.c"
+    break;
+
+  case 17: /* statement: T_NEWLINE  */
+#line 176 "nova.y"
+                { (yyval.str_val) = strdup(""); }
+#line 1397 "nova.tab.c"
+    break;
+
+  case 26: /* declaration: T_TYPE_INT T_ID T_ASSIGN expression T_NEWLINE  */
+#line 189 "nova.y"
+      { asprintf(&(yyval.str_val), "\tint %s = %s;\n", (yyvsp[-3].str_val), (yyvsp[-1].str_val)); free((yyvsp[-3].str_val)); free((yyvsp[-1].str_val)); }
+#line 1403 "nova.tab.c"
+    break;
+
+  case 27: /* declaration: T_TYPE_FLOAT T_ID T_ASSIGN expression T_NEWLINE  */
+#line 192 "nova.y"
+      { asprintf(&(yyval.str_val), "\tdouble %s = %s;\n", (yyvsp[-3].str_val), (yyvsp[-1].str_val)); free((yyvsp[-3].str_val)); free((yyvsp[-1].str_val)); }
+#line 1409 "nova.tab.c"
+    break;
+
+  case 28: /* declaration: T_TYPE_STR T_ID T_ASSIGN expression T_NEWLINE  */
+#line 195 "nova.y"
+      { asprintf(&(yyval.str_val), "\tchar *%s = %s;\n", (yyvsp[-3].str_val), (yyvsp[-1].str_val)); free((yyvsp[-3].str_val)); free((yyvsp[-1].str_val)); }
+#line 1415 "nova.tab.c"
+    break;
+
+  case 29: /* declaration: T_TYPE_LIST T_ID T_ASSIGN T_ID T_LPAREN expression T_COMMA expression T_RPAREN T_NEWLINE  */
+#line 198 "nova.y"
       {
          if (strcmp((yyvsp[-6].str_val), "fibonacci") == 0) {
-             printf("\tint %s[100];\n", (yyvsp[-8].str_val));
-             printf("\tfill_fibonacci_range(%s, %s, %s);\n", (yyvsp[-8].str_val), (yyvsp[-4].str_val), (yyvsp[-2].str_val));
+             asprintf(&(yyval.str_val), "\tint %s[100];\n\tfill_fibonacci_range(%s, %s, %s);\n", (yyvsp[-8].str_val), (yyvsp[-8].str_val), (yyvsp[-4].str_val), (yyvsp[-2].str_val));
          } else {
-             printf("\t/* Unknown list func */\n");
+             (yyval.str_val) = strdup("\t/* Unknown list func */\n");
          }
+         free((yyvsp[-8].str_val)); free((yyvsp[-6].str_val)); free((yyvsp[-4].str_val)); free((yyvsp[-2].str_val));
       }
-#line 1388 "nova.tab.c"
+#line 1428 "nova.tab.c"
     break;
 
-  case 29: /* declaration: T_TYPE_INT T_ID T_ASSIGN T_INPUT_OP T_NEWLINE  */
-#line 184 "nova.y"
-      { printf("\tint %s = get_int();\n", (yyvsp[-3].str_val)); }
-#line 1394 "nova.tab.c"
-    break;
-
-  case 30: /* declaration: T_TYPE_STR T_ID T_ASSIGN T_INPUT_OP T_NEWLINE  */
-#line 186 "nova.y"
-      { printf("\tchar *%s = get_str();\n", (yyvsp[-3].str_val)); }
-#line 1400 "nova.tab.c"
-    break;
-
-  case 31: /* assignment: T_ID T_ASSIGN expression T_NEWLINE  */
-#line 191 "nova.y"
-      { printf("\t%s = %s;\n", (yyvsp[-3].str_val), (yyvsp[-1].str_val)); }
-#line 1406 "nova.tab.c"
-    break;
-
-  case 32: /* print_stmt: T_PRINT_OP expression T_NEWLINE  */
-#line 196 "nova.y"
-      { printf("\tprint_any(%s);\n", (yyvsp[-1].str_val)); }
-#line 1412 "nova.tab.c"
-    break;
-
-  case 33: /* if_head: T_IF expression cmp_op expression T_NEWLINE  */
-#line 201 "nova.y"
-      { printf("\tif (%s %s %s) {\n", (yyvsp[-3].str_val), (yyvsp[-2].str_val), (yyvsp[-1].str_val)); }
-#line 1418 "nova.tab.c"
-    break;
-
-  case 34: /* if_block: if_head statements T_BLOCK_END  */
-#line 206 "nova.y"
-      { printf("\t}\n"); }
-#line 1424 "nova.tab.c"
-    break;
-
-  case 35: /* $@3: %empty  */
+  case 30: /* declaration: T_TYPE_INT T_ID T_ASSIGN T_INPUT_OP T_NEWLINE  */
 #line 208 "nova.y"
-      { printf("\t} else {\n"); }
-#line 1430 "nova.tab.c"
+      { asprintf(&(yyval.str_val), "\tint %s = get_int();\n", (yyvsp[-3].str_val)); free((yyvsp[-3].str_val)); }
+#line 1434 "nova.tab.c"
     break;
 
-  case 36: /* if_block: if_head statements T_ELSE T_NEWLINE $@3 statements T_BLOCK_END  */
-#line 210 "nova.y"
-      { printf("\t}\n"); }
-#line 1436 "nova.tab.c"
+  case 31: /* declaration: T_TYPE_FLOAT T_ID T_ASSIGN T_INPUT_OP T_NEWLINE  */
+#line 211 "nova.y"
+      { asprintf(&(yyval.str_val), "\tdouble %s = get_float();\n", (yyvsp[-3].str_val)); free((yyvsp[-3].str_val)); }
+#line 1440 "nova.tab.c"
     break;
 
-  case 37: /* $@4: %empty  */
-#line 215 "nova.y"
-      { printf("\twhile (%s %s %s) {\n", (yyvsp[-3].str_val), (yyvsp[-2].str_val), (yyvsp[-1].str_val)); }
-#line 1442 "nova.tab.c"
+  case 32: /* declaration: T_TYPE_STR T_ID T_ASSIGN T_INPUT_OP T_NEWLINE  */
+#line 214 "nova.y"
+      { asprintf(&(yyval.str_val), "\tchar *%s = get_str();\n", (yyvsp[-3].str_val)); free((yyvsp[-3].str_val)); }
+#line 1446 "nova.tab.c"
     break;
 
-  case 38: /* while_block: T_WHILE expression cmp_op expression T_NEWLINE $@4 statements T_BLOCK_END  */
+  case 33: /* declaration: T_TYPE_LIST T_ID T_ASSIGN T_INPUT_OP T_NEWLINE  */
 #line 217 "nova.y"
-      { printf("\t}\n"); }
-#line 1448 "nova.tab.c"
+      { asprintf(&(yyval.str_val), "\tint %s[100] = {0};\n\tget_list(%s, 100);\n", (yyvsp[-3].str_val), (yyvsp[-3].str_val)); free((yyvsp[-3].str_val)); }
+#line 1452 "nova.tab.c"
     break;
 
-  case 39: /* $@5: %empty  */
+  case 34: /* assignment: T_ID T_ASSIGN expression T_NEWLINE  */
 #line 222 "nova.y"
-      { printf("\tfor(int _i=0; _i < (int)(%s); _i++) {\n", (yyvsp[-1].str_val)); }
-#line 1454 "nova.tab.c"
+      { asprintf(&(yyval.str_val), "\t%s = %s;\n", (yyvsp[-3].str_val), (yyvsp[-1].str_val)); free((yyvsp[-3].str_val)); free((yyvsp[-1].str_val)); }
+#line 1458 "nova.tab.c"
     break;
 
-  case 40: /* loop_block: T_LOOP expression T_NEWLINE $@5 statements T_BLOCK_END  */
-#line 224 "nova.y"
-      { printf("\t}\n"); }
-#line 1460 "nova.tab.c"
+  case 35: /* print_stmt: T_PRINT_OP expression T_NEWLINE  */
+#line 227 "nova.y"
+      { asprintf(&(yyval.str_val), "\tprint_any(%s);\n", (yyvsp[-1].str_val)); free((yyvsp[-1].str_val)); }
+#line 1464 "nova.tab.c"
     break;
 
-  case 41: /* return_stmt: T_RETURN expression T_NEWLINE  */
-#line 229 "nova.y"
-      { printf("\treturn %s;\n", (yyvsp[-1].str_val)); }
-#line 1466 "nova.tab.c"
+  case 36: /* if_head: T_IF expression cmp_op expression T_NEWLINE  */
+#line 232 "nova.y"
+      { 
+          asprintf(&(yyval.str_val), "\tif (%s %s %s) {\n", (yyvsp[-3].str_val), (yyvsp[-2].str_val), (yyvsp[-1].str_val)); 
+          free((yyvsp[-3].str_val)); free((yyvsp[-2].str_val)); free((yyvsp[-1].str_val));
+      }
+#line 1473 "nova.tab.c"
     break;
 
-  case 42: /* void_func_call: T_ID T_LPAREN call_args T_RPAREN T_NEWLINE  */
-#line 234 "nova.y"
-      { printf("\t%s(%s);\n", (yyvsp[-4].str_val), (yyvsp[-2].str_val)); }
-#line 1472 "nova.tab.c"
-    break;
-
-  case 43: /* expression: value  */
+  case 37: /* if_block: if_head statements T_BLOCK_END  */
 #line 240 "nova.y"
-            { (yyval.str_val) = (yyvsp[0].str_val); }
-#line 1478 "nova.tab.c"
+      { 
+          (yyval.str_val) = concat(3, (yyvsp[-2].str_val), (yyvsp[-1].str_val), "\t}\n"); 
+          free((yyvsp[-2].str_val)); free((yyvsp[-1].str_val));
+      }
+#line 1482 "nova.tab.c"
     break;
 
-  case 44: /* expression: expression T_PLUS expression  */
-#line 241 "nova.y"
-                                    { char b[100]; sprintf(b, "%s + %s", (yyvsp[-2].str_val), (yyvsp[0].str_val)); (yyval.str_val) = strdup(b); }
-#line 1484 "nova.tab.c"
+  case 38: /* if_block: if_head statements T_ELSE T_NEWLINE statements T_BLOCK_END  */
+#line 245 "nova.y"
+      { 
+          (yyval.str_val) = concat(5, (yyvsp[-5].str_val), (yyvsp[-4].str_val), "\t} else {\n", (yyvsp[-1].str_val), "\t}\n");
+          free((yyvsp[-5].str_val)); free((yyvsp[-4].str_val)); free((yyvsp[-1].str_val));
+      }
+#line 1491 "nova.tab.c"
     break;
 
-  case 45: /* expression: expression T_MINUS expression  */
-#line 242 "nova.y"
-                                    { char b[100]; sprintf(b, "%s - %s", (yyvsp[-2].str_val), (yyvsp[0].str_val)); (yyval.str_val) = strdup(b); }
-#line 1490 "nova.tab.c"
-    break;
-
-  case 46: /* expression: expression T_MUL expression  */
-#line 243 "nova.y"
-                                    { char b[100]; sprintf(b, "%s * %s", (yyvsp[-2].str_val), (yyvsp[0].str_val)); (yyval.str_val) = strdup(b); }
-#line 1496 "nova.tab.c"
-    break;
-
-  case 47: /* expression: expression T_DIV expression  */
-#line 244 "nova.y"
-                                    { char b[100]; sprintf(b, "%s / %s", (yyvsp[-2].str_val), (yyvsp[0].str_val)); (yyval.str_val) = strdup(b); }
+  case 39: /* while_block: T_WHILE expression cmp_op expression T_NEWLINE statements T_BLOCK_END  */
+#line 253 "nova.y"
+      {
+          char *head;
+          asprintf(&head, "\twhile (%s %s %s) {\n", (yyvsp[-5].str_val), (yyvsp[-4].str_val), (yyvsp[-3].str_val));
+          (yyval.str_val) = concat(3, head, (yyvsp[-1].str_val), "\t}\n");
+          free(head); free((yyvsp[-5].str_val)); free((yyvsp[-4].str_val)); free((yyvsp[-3].str_val)); free((yyvsp[-1].str_val));
+      }
 #line 1502 "nova.tab.c"
     break;
 
-  case 48: /* expression: T_ID T_LPAREN call_args T_RPAREN  */
-#line 247 "nova.y"
-      { 
-        char b[100]; 
-        if (strcmp((yyvsp[-3].str_val), "random") == 0) sprintf(b, "random_int(%s)", (yyvsp[-1].str_val));
-        else sprintf(b, "%s(%s)", (yyvsp[-3].str_val), (yyvsp[-1].str_val)); 
-        (yyval.str_val) = strdup(b);
+  case 40: /* loop_block: T_LOOP expression T_NEWLINE statements T_BLOCK_END  */
+#line 263 "nova.y"
+      {
+          char *head;
+          asprintf(&head, "\tfor(int _i=0; _i < (int)(%s); _i++) {\n", (yyvsp[-3].str_val));
+          (yyval.str_val) = concat(3, head, (yyvsp[-1].str_val), "\t}\n");
+          free(head); free((yyvsp[-3].str_val)); free((yyvsp[-1].str_val));
       }
 #line 1513 "nova.tab.c"
     break;
 
-  case 49: /* call_args: %empty  */
-#line 256 "nova.y"
-                       { (yyval.str_val) = "0, 0"; }
+  case 41: /* return_stmt: T_RETURN expression T_NEWLINE  */
+#line 273 "nova.y"
+      { asprintf(&(yyval.str_val), "\treturn %s;\n", (yyvsp[-1].str_val)); free((yyvsp[-1].str_val)); }
 #line 1519 "nova.tab.c"
     break;
 
-  case 50: /* call_args: call_arg_list  */
-#line 257 "nova.y"
-                    { (yyval.str_val) = (yyvsp[0].str_val); }
+  case 42: /* void_func_call: T_ID T_LPAREN call_args T_RPAREN T_NEWLINE  */
+#line 278 "nova.y"
+      { asprintf(&(yyval.str_val), "\t%s(%s);\n", (yyvsp[-4].str_val), (yyvsp[-2].str_val)); free((yyvsp[-4].str_val)); free((yyvsp[-2].str_val)); }
 #line 1525 "nova.tab.c"
     break;
 
-  case 51: /* call_arg_list: expression  */
-#line 261 "nova.y"
-                 { (yyval.str_val) = (yyvsp[0].str_val); }
+  case 43: /* expression: value  */
+#line 282 "nova.y"
+            { (yyval.str_val) = (yyvsp[0].str_val); }
 #line 1531 "nova.tab.c"
     break;
 
-  case 52: /* call_arg_list: expression T_COMMA call_arg_list  */
-#line 262 "nova.y"
-                                       { char b[200]; sprintf(b, "%s, %s", (yyvsp[-2].str_val), (yyvsp[0].str_val)); (yyval.str_val) = strdup(b); }
+  case 44: /* expression: expression T_PLUS expression  */
+#line 283 "nova.y"
+                                    { asprintf(&(yyval.str_val), "%s + %s", (yyvsp[-2].str_val), (yyvsp[0].str_val)); free((yyvsp[-2].str_val)); free((yyvsp[0].str_val)); }
 #line 1537 "nova.tab.c"
     break;
 
-  case 53: /* cmp_op: T_GT  */
-#line 266 "nova.y"
-           { (yyval.str_val) = ">"; }
+  case 45: /* expression: expression T_MINUS expression  */
+#line 284 "nova.y"
+                                    { asprintf(&(yyval.str_val), "%s - %s", (yyvsp[-2].str_val), (yyvsp[0].str_val)); free((yyvsp[-2].str_val)); free((yyvsp[0].str_val)); }
 #line 1543 "nova.tab.c"
     break;
 
-  case 54: /* cmp_op: T_LT  */
-#line 267 "nova.y"
-           { (yyval.str_val) = "<"; }
+  case 46: /* expression: expression T_MUL expression  */
+#line 285 "nova.y"
+                                    { asprintf(&(yyval.str_val), "%s * %s", (yyvsp[-2].str_val), (yyvsp[0].str_val)); free((yyvsp[-2].str_val)); free((yyvsp[0].str_val)); }
 #line 1549 "nova.tab.c"
     break;
 
-  case 55: /* cmp_op: T_EQ  */
-#line 268 "nova.y"
-           { (yyval.str_val) = "=="; }
+  case 47: /* expression: expression T_DIV expression  */
+#line 286 "nova.y"
+                                    { asprintf(&(yyval.str_val), "%s / %s", (yyvsp[-2].str_val), (yyvsp[0].str_val)); free((yyvsp[-2].str_val)); free((yyvsp[0].str_val)); }
 #line 1555 "nova.tab.c"
     break;
 
+  case 48: /* expression: T_ID T_LPAREN call_args T_RPAREN  */
+#line 289 "nova.y"
+      { 
+        if (strcmp((yyvsp[-3].str_val), "random") == 0) asprintf(&(yyval.str_val), "random_int(%s)", (yyvsp[-1].str_val));
+        else asprintf(&(yyval.str_val), "%s(%s)", (yyvsp[-3].str_val), (yyvsp[-1].str_val));
+        free((yyvsp[-3].str_val)); free((yyvsp[-1].str_val));
+      }
+#line 1565 "nova.tab.c"
+    break;
+
+  case 49: /* call_args: %empty  */
+#line 297 "nova.y"
+                       { (yyval.str_val) = strdup(""); }
+#line 1571 "nova.tab.c"
+    break;
+
+  case 50: /* call_args: call_arg_list  */
+#line 298 "nova.y"
+                    { (yyval.str_val) = (yyvsp[0].str_val); }
+#line 1577 "nova.tab.c"
+    break;
+
+  case 51: /* call_arg_list: expression  */
+#line 302 "nova.y"
+                 { (yyval.str_val) = (yyvsp[0].str_val); }
+#line 1583 "nova.tab.c"
+    break;
+
+  case 52: /* call_arg_list: expression T_COMMA call_arg_list  */
+#line 303 "nova.y"
+                                       { 
+        asprintf(&(yyval.str_val), "%s, %s", (yyvsp[-2].str_val), (yyvsp[0].str_val)); 
+        free((yyvsp[-2].str_val)); free((yyvsp[0].str_val));
+    }
+#line 1592 "nova.tab.c"
+    break;
+
+  case 53: /* cmp_op: T_GT  */
+#line 310 "nova.y"
+           { (yyval.str_val) = strdup(">"); }
+#line 1598 "nova.tab.c"
+    break;
+
+  case 54: /* cmp_op: T_LT  */
+#line 311 "nova.y"
+           { (yyval.str_val) = strdup("<"); }
+#line 1604 "nova.tab.c"
+    break;
+
+  case 55: /* cmp_op: T_EQ  */
+#line 312 "nova.y"
+           { (yyval.str_val) = strdup("=="); }
+#line 1610 "nova.tab.c"
+    break;
+
   case 56: /* cmp_op: T_NEQ  */
-#line 269 "nova.y"
-            { (yyval.str_val) = "!="; }
-#line 1561 "nova.tab.c"
+#line 313 "nova.y"
+            { (yyval.str_val) = strdup("!="); }
+#line 1616 "nova.tab.c"
     break;
 
   case 57: /* value: T_ID  */
-#line 273 "nova.y"
-           { (yyval.str_val) = (yyvsp[0].str_val); }
-#line 1567 "nova.tab.c"
+#line 317 "nova.y"
+           { (yyval.str_val) = strdup((yyvsp[0].str_val)); }
+#line 1622 "nova.tab.c"
     break;
 
   case 58: /* value: T_VAL_INT  */
-#line 274 "nova.y"
-                { (yyval.str_val) = (yyvsp[0].str_val); }
-#line 1573 "nova.tab.c"
+#line 318 "nova.y"
+                { (yyval.str_val) = strdup((yyvsp[0].str_val)); }
+#line 1628 "nova.tab.c"
     break;
 
   case 59: /* value: T_VAL_FLOAT  */
-#line 275 "nova.y"
-                  { (yyval.str_val) = (yyvsp[0].str_val); }
-#line 1579 "nova.tab.c"
+#line 319 "nova.y"
+                  { (yyval.str_val) = strdup((yyvsp[0].str_val)); }
+#line 1634 "nova.tab.c"
     break;
 
   case 60: /* value: T_VAL_STR  */
-#line 276 "nova.y"
-                { (yyval.str_val) = (yyvsp[0].str_val); }
-#line 1585 "nova.tab.c"
+#line 320 "nova.y"
+                { (yyval.str_val) = strdup((yyvsp[0].str_val)); }
+#line 1640 "nova.tab.c"
     break;
 
   case 61: /* value: T_ID T_LBRACKET expression T_RBRACKET  */
-#line 277 "nova.y"
+#line 321 "nova.y"
                                             {
-        char buf[100]; sprintf(buf, "%s[%s]", (yyvsp[-3].str_val), (yyvsp[-1].str_val)); (yyval.str_val) = strdup(buf);
+        asprintf(&(yyval.str_val), "%s[%s]", (yyvsp[-3].str_val), (yyvsp[-1].str_val));
+        free((yyvsp[-3].str_val)); free((yyvsp[-1].str_val));
     }
-#line 1593 "nova.tab.c"
+#line 1649 "nova.tab.c"
     break;
 
 
-#line 1597 "nova.tab.c"
+#line 1653 "nova.tab.c"
 
       default: break;
     }
@@ -1786,10 +1842,12 @@ yyreturnlab:
   return yyresult;
 }
 
-#line 282 "nova.y"
+#line 327 "nova.y"
 
 
-void yyerror(const char *s) { fprintf(stderr, "Error: %s\n", s); }
+void yyerror(const char *s) { 
+    fprintf(stderr, "Parsing Error at line %d: %s\n", yylineno, s);
+}
 
 int main(int argc, char **argv) {
     if (argc > 1) {
@@ -1797,7 +1855,17 @@ int main(int argc, char **argv) {
         yyin = fopen(argv[1], "r");
         if (!yyin) { perror(argv[1]); return 1; }
     }
-    yyparse();
-    printf("\n    return 0;\n}\n");
+    
+    /* Парсинг */
+    if (yyparse() == 0 && FINAL_CODE != NULL) {
+        /* Успешный парсинг */
+        printf("%s", FINAL_CODE);
+        free(FINAL_CODE);
+    } else {
+        /* Ошибка парсинга */
+        printf("%s", LIB_CODE);
+        printf("int main() { printf(\"FATAL ERROR: Parsing failed! Check line %d.\\n\"); return 1; }\n", yylineno);
+    }
+    
     return 0;
 }

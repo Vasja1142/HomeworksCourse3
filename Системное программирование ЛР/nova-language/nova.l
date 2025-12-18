@@ -6,6 +6,7 @@
 %}
 
 %option noyywrap
+%option yylineno
 
 DIGIT       [0-9]
 LETTER      [a-zA-Z_]
@@ -16,7 +17,7 @@ ID          {LETTER}({LETTER}|{DIGIT})*
 
 %%
 
-"#".*       { /* Игнорируем комментарии (начинаются с #) */ }
+"#".*       { /* Игнорируем комментарии */ }
 
 "---"       { return T_BLOCK_END; }
 
@@ -61,6 +62,6 @@ ID          {LETTER}({LETTER}|{DIGIT})*
 [\n]        { return T_NEWLINE; }
 [ \t\r]+    { /* Игнорируем пробелы */ }
 
-.           { fprintf(stderr, "Lexer Error: Unknown char %s\n", yytext); exit(1); }
+.           { fprintf(stderr, "Lexer Error: Unknown char '%s' at line %d\n", yytext, yylineno); exit(1); }
 
 %%

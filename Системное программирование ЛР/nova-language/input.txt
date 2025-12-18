@@ -21,16 +21,13 @@ list load_factors = fibonacci(1, 8)
 >>> "[INPUT] Введите порог тревоги (Int), например 100:"
 int threshold = ^
 
-# Инициализация лог-файла (Создаем новый)
+# Инициализация лог-файла
 file_write("system_log.txt", "--- START OF LOG ---")
 
 >>> "[SYSTEM] Запуск цикла обработки (WHILE i < 5)..."
 int steps = 5
 int i = 0
-loop 5
-    >>> steps
-    steps = steps - 1
----
+
 while i < steps
     >>> "----------------------------------------------"
     >>> "[LOOP] Итерация №:"
@@ -52,19 +49,17 @@ while i < steps
     
     if metric > threshold
         >>> "        -> STATUS: CRITICAL"
-        # ДОБАВЛЯЕМ запись в файл (Append)
         file_append("system_log.txt", "ALERT: Threshold exceeded")
     else
         >>> "        -> STATUS: NORMAL"
-        # ДОБАВЛЯЕМ запись в файл (Append)
         file_append("system_log.txt", "INFO: System stable")
     ---
     i = i + 1
 ---
 
 >>> "----------------------------------------------"
->>> "[MATH] Расчет эффективности (99.0 * 0.55):"
-float base_efficiency = 99.0
+>>> "[MATH] Расчет эффективности (Float):"
+float base_efficiency = 100.0
 float degradation = 0.55
 float final_eff = base_efficiency * degradation
 >>> final_eff
