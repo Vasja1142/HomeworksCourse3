@@ -3,12 +3,11 @@
 
 <head>
     <meta charset="UTF-8">
-    <title>Triangulation T-R Procedure (Dark Mode)</title>
+    <title>Correct Interior Triangulation</title>
     <style>
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background-color: #3d3d3d;
-            /* Очень темный фон страницы */
+            font-family: 'Segoe UI', Tahoma, sans-serif;
+            background-color: #1a1a1a;
             color: #eee;
             display: flex;
             flex-direction: column;
@@ -17,78 +16,57 @@
             padding: 20px;
         }
 
-        h1 {
-            margin-bottom: 10px;
-            font-size: 1.5rem;
-            color: #fff;
-        }
-
         .controls {
             margin-bottom: 15px;
             background: #2a2a2a;
-            padding: 10px;
+            padding: 15px;
             border-radius: 8px;
             border: 1px solid #444;
         }
 
         button {
-            padding: 8px 16px;
+            padding: 10px 20px;
             cursor: pointer;
             background-color: #007bff;
-            /* Синяя кнопка */
             color: white;
             border: none;
             border-radius: 4px;
-            font-size: 14px;
+            font-weight: bold;
             margin: 0 5px;
-            transition: background 0.2s;
         }
 
-        button:hover {
-            background-color: #0056b3;
-        }
-
-        button.reset {
-            background-color: #dc3545;
-        }
-
-        /* Красная кнопка */
-        button.reset:hover {
-            background-color: #a71d2a;
-        }
+        button:hover { background-color: #0056b3; }
+        button.reset { background-color: #dc3545; }
 
         canvas {
-            background-color: #000050;
-            /* Темный фон холста */
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.8);
+            background-color: #050510;
+            box-shadow: 0 0 25px rgba(0, 0, 0, 0.7);
             cursor: crosshair;
             border-radius: 8px;
-            border: 1px solid #333;
+            border: 2px solid #444;
         }
 
         .info {
-            margin-top: 10px;
-            font-size: 0.9rem;
+            margin-top: 15px;
             color: #888;
-            max-width: 800px;
-            text-align: center;
+            font-size: 0.9rem;
         }
     </style>
 </head>
 
 <body>
 
-    <h1>Триангуляция (T-R + Center Fan)</h1>
+    <h1 style="color: #00d4ff;">Внутренняя триангуляция (Ear Clipping)</h1>
 
     <div class="controls">
-        <button onclick="calculate()">Триангулировать</button>
+        <button onclick="calculate()">Триангулировать внутри</button>
         <button class="reset" onclick="resetCanvas()">Очистить</button>
     </div>
 
     <canvas id="canvas" width="800" height="600"></canvas>
 
     <div class="info">
-        ЛКМ: Добавить точку. | Кнопка "Триангулировать": Запустить алгоритм.
+        Ставьте точки последовательно. Алгоритм автоматически определит внутреннюю область.
     </div>
 
     <script>
@@ -98,26 +76,10 @@
         let triangles = [];
         let isFinished = false;
 
-        // === Векторная математика ===
-        const Vec2 = {
-            sub: (v1, v2) => ({ x: v1.x - v2.x, y: v1.y - v2.y }),
-            add: (v1, v2) => ({ x: v1.x + v2.x, y: v1.y + v2.y }),
-            dot: (v1, v2) => v1.x * v2.x + v1.y * v2.y,
-            cross: (v1, v2) => v1.x * v2.y - v1.y * v2.x,
-            mag: (v) => Math.sqrt(v.x * v.x + v.y * v.y),
-            normalize: (v) => {
-                const m = Math.sqrt(v.x * v.x + v.y * v.y);
-                return m === 0 ? { x: 0, y: 0 } : { x: v.x / m, y: v.y / m };
-            }
-        };
-
-        // === Обработка ввода ===
         canvas.addEventListener('mousedown', (e) => {
             if (isFinished) resetCanvas();
             const rect = canvas.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
-            points.push({ x, y });
+            points.push({ x: e.clientX - rect.left, y: e.clientY - rect.top });
             draw();
         });
 
@@ -128,237 +90,141 @@
             draw();
         }
 
-        // === Главная функция запуска ===
         function calculate() {
             if (points.length < 3) return;
 
-            let poly = [...points];
-            // Обеспечиваем правильный порядок обхода (для внутренней логики)
-            if (getSignedArea(poly) > 0) {
-                poly.reverse();
+            let vertices = [...points];
+
+            // 1. В Canvas (Y-вниз) отриц. площадь = CCW (против часовой).
+            // Принудительно приводим к CCW, чтобы математика "уха" работала корректно.
+            if (getSignedArea(vertices) > 0) {
+                vertices.reverse();
             }
 
-            triangles = processPolygon(poly);
+            triangles = [];
+            let workList = [...vertices];
+
+            // Ограничитель итераций на случай вырожденных фигур
+            let maxIters = workList.length * 10; 
+            
+            while (workList.length > 3 && maxIters > 0) {
+                let earFound = false;
+
+                for (let i = 0; i < workList.length; i++) {
+                    if (isEar(workList, i)) {
+                        const prev = workList[(i - 1 + workList.length) % workList.length];
+                        const curr = workList[i];
+                        const next = workList[(i + 1) % workList.length];
+
+                        triangles.push([prev, curr, next]);
+                        workList.splice(i, 1);
+                        earFound = true;
+                        break;
+                    }
+                }
+                if (!earFound) break;
+                maxIters--;
+            }
+
+            if (workList.length === 3) {
+                triangles.push([workList[0], workList[1], workList[2]]);
+            }
+
             isFinished = true;
             draw();
         }
 
-        // === Основная логика рекурсии ===
-        function processPolygon(poly) {
-            if (poly.length < 3) return [];
-
-            if (isConvex(poly)) {
-                // Если выпуклая -> веер из центра
-                return triangulateConvexFan(poly);
-            } else {
-                // Если вогнутая -> T-R разрез
-                return splitConcavePolygonTR(poly);
-            }
-        }
-
-        // === Метод 1: Веер для выпуклых ===
-        function triangulateConvexFan(poly) {
-            let cx = 0, cy = 0;
-            for (let p of poly) {
-                cx += p.x;
-                cy += p.y;
-            }
-            const center = { x: cx / poly.length, y: cy / poly.length };
-
-            const result = [];
-            for (let i = 0; i < poly.length; i++) {
-                const p1 = poly[i];
-                const p2 = poly[(i + 1) % poly.length];
-                result.push([center, p1, p2]);
-            }
-            return result;
-        }
-
-        // === Метод 2: T-R для вогнутых ===
-        function splitConcavePolygonTR(poly) {
+        // Проверка на "ухо" (должно быть выпуклым И пустым внутри)
+        function isEar(poly, i) {
             const n = poly.length;
-            let reflexIndex = -1;
+            const a = poly[(i - 1 + n) % n];
+            const b = poly[i];
+            const c = poly[(i + 1) % n];
 
-            // Ищем вогнутый угол
-            for (let i = 0; i < n; i++) {
-                const prev = poly[(i - 1 + n) % n];
-                const curr = poly[i];
-                const next = poly[(i + 1) % n];
-                // Cross product < 0 означает "поворот направо" (выпуклость при нашем обходе),
-                // > 0 или около того (зависит от осей) — вогнутость.
-                // При Y вниз и определенном обходе ищем тот, что отличается знаком.
-                if (Vec2.cross(Vec2.sub(next, curr), Vec2.sub(prev, curr)) < 0) {
-                    reflexIndex = i;
-                    break;
-                }
+            // В системе Y-вниз при обходе CCW, 
+            // внутренний угол выпуклый, если векторное произведение < 0
+            if (crossProduct(a, b, c) >= 0) return false;
+
+            // Проверка: нет ли других точек внутри этого треугольника
+            for (let j = 0; j < n; j++) {
+                const p = poly[j];
+                if (p === a || p === b || p === c) continue;
+                if (isPointInTriangle(p, a, b, c)) return false;
             }
 
-            if (reflexIndex === -1) return triangulateConvexFan(poly);
-
-            const P_reflex = poly[reflexIndex];
-            const P_prev = poly[(reflexIndex - 1 + n) % n];
-            const P_next = poly[(reflexIndex + 1) % n];
-
-            // Биссектриса внутреннего угла
-            const v1 = Vec2.normalize(Vec2.sub(P_prev, P_reflex));
-            const v2 = Vec2.normalize(Vec2.sub(P_next, P_reflex));
-            let bisector = Vec2.normalize(Vec2.add(v1, v2));
-            bisector = { x: -bisector.x, y: -bisector.y }; // Инвертируем внутрь
-
-            // Ищем разрез
-            let bestT = Infinity;
-            let bestIntersection = null;
-            let bestEdgeIndex = -1;
-
-            for (let i = 0; i < n; i++) {
-                if (i === reflexIndex || i === (reflexIndex - 1 + n) % n) continue;
-                const A = poly[i];
-                const B = poly[(i + 1) % n];
-                const intersection = getRaySegmentIntersection(P_reflex, bisector, A, B);
-
-                if (intersection) {
-                    const dist = Vec2.mag(Vec2.sub(intersection, P_reflex));
-                    // Небольшой порог epsilon, чтобы не поймать саму точку
-                    if (dist < bestT && dist > 0.001) {
-                        bestT = dist;
-                        bestIntersection = intersection;
-                        bestEdgeIndex = i;
-                    }
-                }
-            }
-
-            if (!bestIntersection) return triangulateConvexFan(poly);
-
-            // Формируем два новых полигона
-            const poly1 = [];
-            let cur = reflexIndex;
-            while (cur !== bestEdgeIndex) {
-                poly1.push(poly[cur]);
-                cur = (cur + 1) % n;
-            }
-            poly1.push(poly[bestEdgeIndex]);
-            poly1.push(bestIntersection);
-
-            const poly2 = [];
-            poly2.push(bestIntersection);
-            let cur2 = (bestEdgeIndex + 1) % n;
-            while (cur2 !== reflexIndex) {
-                poly2.push(poly[cur2]);
-                cur2 = (cur2 + 1) % n;
-            }
-            poly2.push(poly[reflexIndex]);
-
-            return processPolygon(poly1).concat(processPolygon(poly2));
-        }
-
-        // === Утилиты ===
-        function isConvex(poly) {
-            if (poly.length < 3) return false;
-            let hasPos = false;
-            let hasNeg = false;
-            const n = poly.length;
-            for (let i = 0; i < n; i++) {
-                const p1 = poly[i];
-                const p2 = poly[(i + 1) % n];
-                const p3 = poly[(i + 2) % n];
-                const cp = Vec2.cross(Vec2.sub(p2, p1), Vec2.sub(p3, p2));
-                if (cp > 0) hasPos = true;
-                if (cp < 0) hasNeg = true;
-                if (hasPos && hasNeg) return false;
-            }
             return true;
+        }
+
+        function crossProduct(a, b, c) {
+            // (x2-x1)*(y3-y2) - (y2-y1)*(x3-x2)
+            return (b.x - a.x) * (c.y - b.y) - (b.y - a.y) * (c.x - b.x);
+        }
+
+        function isPointInTriangle(p, a, b, c) {
+            // Барицентрические координаты для проверки попадания точки в треугольник
+            const det = (b.y - c.y) * (a.x - c.x) + (c.x - b.x) * (a.y - c.y);
+            const s = ((b.y - c.y) * (p.x - c.x) + (c.x - b.x) * (p.y - c.y)) / det;
+            const t = ((c.y - a.y) * (p.x - c.x) + (a.x - c.x) * (p.y - c.y)) / det;
+            const u = 1 - s - t;
+            return s >= 0 && t >= 0 && u >= 0;
         }
 
         function getSignedArea(poly) {
             let area = 0;
             for (let i = 0; i < poly.length; i++) {
                 const j = (i + 1) % poly.length;
-                area += (poly[j].x - poly[i].x) * (poly[j].y + poly[i].y);
+                area += (poly[i].x * poly[j].y - poly[j].x * poly[i].x); // Упрощенная формула Гаусса
             }
-            return area;
+            // Правильная формула площади для Canvas:
+            let a = 0;
+            for(let i=0; i<poly.length; i++){
+                let next = (i+1)%poly.length;
+                a += (poly[i].x * poly[next].y) - (poly[next].x * poly[i].y);
+            }
+            return a / 2;
         }
 
-        function getRaySegmentIntersection(origin, dir, pA, pB) {
-            const v1 = origin;
-            const v2 = Vec2.add(origin, dir);
-            const v3 = pA;
-            const v4 = pB;
-            const den = (v1.x - v2.x) * (v3.y - v4.y) - (v1.y - v2.y) * (v3.x - v4.x);
-            if (den === 0) return null;
-            const t = ((v1.x - v3.x) * (v3.y - v4.y) - (v1.y - v3.y) * (v3.x - v4.x)) / den;
-            const u = -((v1.x - v2.x) * (v1.y - v3.y) - (v1.y - v2.y) * (v1.x - v3.x)) / den;
-            if (t > 0 && u >= 0 && u <= 1) {
-                return { x: v1.x + t * (v2.x - v1.x), y: v1.y + t * (v2.y - v1.y) };
-            }
-            return null;
-        }
-
-        // === Отрисовка ===
         function draw() {
-            // Очистка темным цветом (не обязательна, если фон CSS совпадает, но для прозрачности полезно)
             ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Сетка
+            ctx.strokeStyle = '#222';
+            for(let i=0; i<800; i+=40) { ctx.beginPath(); ctx.moveTo(i,0); ctx.lineTo(i,600); ctx.stroke(); }
+            for(let i=0; i<600; i+=40) { ctx.beginPath(); ctx.moveTo(0,i); ctx.lineTo(800,i); ctx.stroke(); }
 
-            drawGrid();
+            // Треугольники
+            triangles.forEach((tri, index) => {
+                ctx.beginPath();
+                ctx.moveTo(tri[0].x, tri[0].y);
+                ctx.lineTo(tri[1].x, tri[1].y);
+                ctx.lineTo(tri[2].x, tri[2].y);
+                ctx.closePath();
+                
+                const hue = (index * 137) % 360; // Золотое сечение для разброса цветов
+                ctx.fillStyle = `hsla(${hue}, 60%, 40%, 0.4)`;
+                ctx.fill();
+                ctx.strokeStyle = `hsla(${hue}, 80%, 60%, 1)`;
+                ctx.stroke();
+            });
 
-            // Результат (Треугольники)
-            if (triangles.length > 0) {
-                triangles.forEach((tri, index) => {
-                    ctx.beginPath();
-                    ctx.moveTo(tri[0].x, tri[0].y);
-                    ctx.lineTo(tri[1].x, tri[1].y);
-                    ctx.lineTo(tri[2].x, tri[2].y);
-                    ctx.closePath();
-
-                    // Яркие неоновые цвета
-                    const hue = (index * 50 + 200) % 360;
-                    ctx.fillStyle = `hsla(${hue}, 80%, 60%, 0.2)`; // Полупрозрачная заливка
-                    ctx.fill();
-
-                    ctx.strokeStyle = `hsla(${hue}, 80%, 80%, 1.0)`; // Контур треугольника
-                    ctx.lineWidth = 1;
-                    ctx.stroke();
-                });
-            }
-
-            // Исходный контур
+            // Контур
             if (points.length > 0) {
                 ctx.beginPath();
                 ctx.moveTo(points[0].x, points[0].y);
-                for (let i = 1; i < points.length; i++) {
-                    ctx.lineTo(points[i].x, points[i].y);
-                }
+                for (let i = 1; i < points.length; i++) ctx.lineTo(points[i].x, points[i].y);
                 if (isFinished) ctx.closePath();
-
-                // Ярко-желтый (Gold) контур фигуры
-                ctx.strokeStyle = '#FF00F0';
-                ctx.lineWidth = 3;
+                ctx.strokeStyle = '#00ffaa';
+                ctx.lineWidth = 2;
                 ctx.stroke();
 
-                // Точки (Белые с красной обводкой)
                 points.forEach(p => {
                     ctx.beginPath();
                     ctx.arc(p.x, p.y, 4, 0, Math.PI * 2);
-                    ctx.fillStyle = '#fff';
+                    ctx.fillStyle = "#fff";
                     ctx.fill();
-                    ctx.strokeStyle = '#ffff00';
-                    ctx.lineWidth = 2;
-                    ctx.stroke();
                 });
             }
         }
-
-        function drawGrid() {
-            ctx.strokeStyle = 'rgba(255, 255, 255, 0.15)'; // Очень тусклая сетка
-            ctx.lineWidth = 1;
-            const step = 20;
-            for (let i = 0; i < canvas.width; i += step) {
-                ctx.beginPath(); ctx.moveTo(i, 0); ctx.lineTo(i, canvas.height); ctx.stroke();
-            }
-            for (let i = 0; i < canvas.height; i += step) {
-                ctx.beginPath(); ctx.moveTo(0, i); ctx.lineTo(canvas.width, i); ctx.stroke();
-            }
-        }
-
     </script>
 </body>
 
