@@ -13,12 +13,12 @@
             "state": {
               "type": "markdown",
               "state": {
-                "file": "Исследование операций.md",
+                "file": "Автоматизация разработки, тестирования и развертывания программных систем.md",
                 "mode": "source",
                 "source": false
               },
               "icon": "lucide-file",
-              "title": "Исследование операций"
+              "title": "Автоматизация разработки, тестирования и развертывания программных систем"
             }
           }
         ]
@@ -185,6 +185,12 @@
   },
   "active": "9f32810547c410e5",
   "lastOpenFiles": [
+    "Сети и телекоммуникации.md",
+    "масич.ods",
+    "lu7813za1e.tmp",
+    "ДЗИсследование_операций2.ods",
+    "lu46831lxj.tmp",
+    "Исследование операций.md",
     "Системное программирование.md",
     "Изображения/Pasted image 20260216121059.png",
     "Изображения/Pasted image 20260216130058.png",
@@ -192,13 +198,11 @@
     "Изображения/Pasted image 20260216115023.png",
     "Изображения/dq8cDQmvUptrPqsUZKcLqeQ9XuNM7WHY-L6v9YILKuTeNWD4v7sM8viKQd5v89GMOX0EMyK7d_yIKVCgB5-YmeYG 1.jpg",
     "Изображения/dq8cDQmvUptrPqsUZKcLqeQ9XuNM7WHY-L6v9YILKuTeNWD4v7sM8viKQd5v89GMOX0EMyK7d_yIKVCgB5-YmeYG.jpg",
-    "Исследование операций.md",
     "Pasted image 20260216130058.png",
     "Pasted image 20260216121059.png",
     "Pasted image 20260216115559.png",
     "Pasted image 20260216115023.png",
     "Автоматизация разработки, тестирования и развертывания программных систем.md",
-    "Сети и телекоммуникации.md",
     "Моделирование систем.md"
   ]
 }
